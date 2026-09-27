@@ -31,6 +31,9 @@
   --bad: #d03b3b;
   --bad-text: #b02a2a;
   --bad-soft: #fbe9e9;
+  --close: #d9661f;
+  --close-soft: #fdeee2;
+  --close-text: #8f3c08;
 
   /* Data-viz palette (validated categorical slots 1–3) and chart chrome */
   --series-1: #2a78d6;
@@ -69,6 +72,8 @@
     --warn-text: #f5c354;
     --bad-text: #f07a7a;
     --bad-soft: #2e1414;
+    --close-soft: #33200f;
+    --close-text: #f7a869;
 
     --series-1: #3987e5;
     --series-2: #d95926;
@@ -334,6 +339,9 @@ select {
 
 .btn-good { background: var(--good); color: #fff; }
 .btn-good:hover:not(:disabled) { filter: brightness(0.92); }
+
+.btn-close { background: var(--close-soft); border-color: var(--close); color: var(--close-text); }
+.btn-close:hover:not(:disabled) { background: color-mix(in srgb, var(--close) 22%, var(--close-soft)); }
 
 .btn-sm { padding: 0.3rem 0.65rem; font-size: 0.82rem; }
 .btn-lg { padding: 0.8rem 1.4rem; font-size: 1rem; }
@@ -658,7 +666,13 @@ kbd, .kbd {
   .flashcard-inner { transition: none; }
 }
 
-.rate-buttons { display: grid; grid-template-columns: 1fr 1fr; gap: 0.75rem; }
+.rate-buttons { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 0.75rem; }
+.rate-buttons .btn { white-space: normal; padding-inline: 0.75rem; }
+
+@media (max-width: 480px) {
+  .rate-buttons { gap: 0.5rem; }
+  .rate-buttons .btn { font-size: 0.9rem; padding: 0.7rem 0.5rem; }
+}
 
 /* Multiple choice */
 .mc-options { display: grid; grid-template-columns: 1fr 1fr; gap: 0.65rem; }

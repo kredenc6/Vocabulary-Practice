@@ -8,7 +8,7 @@ A React + TypeScript web app for practicing Spanish–English vocabulary with fl
 - **CSV import**: two columns (Spanish, English), with or without a header row. Comma and semicolon delimiters are auto-detected. Duplicates and invalid rows are skipped, and you see a preview before anything is imported.
 - **Practice directions**: Spanish → English, English → Spanish, or a random mix.
 - **Practice modes** (use one or mix several):
-  - **Flashcards**: flip the card and rate yourself ("I knew it" / "I didn't know it").
+  - **Flashcards**: flip the card and rate yourself ("I didn't know it" / "I was close" / "I knew it"). The first "I was close" on a word saves nothing and asks the card again later in the session. Any further "I was close" on that word in the same session counts as "I didn't know it".
   - **Multiple choice**: 4 options, exactly one correct.
   - **Typed translation**: case and punctuation are ignored, and English "to"/"the" are optional. Missing accents, small typos, and a missing Spanish article count as **"close enough"**. An "I was right" button lets you accept synonyms.
 - **Spaced repetition (SM-2)**: each word has its own ease factor, interval, and repetition count. Correct answers grow the interval; wrong answers reset it, and the word becomes due again right away. Missed words can be repeated at the end of a session.
@@ -148,6 +148,6 @@ src/
 
 | Mode | Keys |
 | --- | --- |
-| Flashcards | `Space` flip · `1` didn't know · `2` knew it |
+| Flashcards | `Space` flip · `1` / `←` didn't know · `2` / `↓` close · `3` / `→` knew it |
 | Multiple choice | `1`–`4` choose · `Enter` next |
 | Typed | `Enter` check · `Enter` next |

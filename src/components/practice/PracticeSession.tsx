@@ -1,9 +1,10 @@
 import { useRef, useState } from 'react';
 import { useWords } from '../../context/words';
-import { DIRECTION_LABELS, MODE_LABELS, answerText, makeCard } from '../../lib/practice';
+import { DIRECTION_LABELS, MODE_LABELS, answerText, makeCard, repeatCard } from '../../lib/practice';
 import type { AnswerOutcome, CardResult, PracticeCard, PracticeSettings, VocabWord } from '../../types';
 import { FeedbackBar } from './FeedbackBar';
 import { FlashcardView } from './FlashcardView';
+import type { FlashcardRating } from './FlashcardView';
 import { MultipleChoiceView } from './MultipleChoiceView';
 import { TypedAnswerView } from './TypedAnswerView';
 
@@ -34,6 +35,8 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
   /** Latest SRS state of words answered in this session (ahead of the Firestore snapshot). */
   const latest = useRef(new Map<string, VocabWord>());
   const repeats = useRef(new Map<string, number>());
+  /** Words already rated "I was close" in this session. Lives only as long as the session. */
+  const closeUsed = useRef(new Set<string>());
 
   const card = queue[index];
 
@@ -64,6 +67,19 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
     setPending(null);
     if (index + 1 >= nextQueue.length) onFinish(nextResults);
     else setIndex(index + 1);
+  };
+
+  const rateFlashcard = (rating: FlashcardRating) => {
+    if (rating === 'close' && !closeUsed.current.has(card.word.id)) {
+      // First "I was close": save nothing (SRS state incl. ease factor stays as is)
+      // and ask the same card again later in this session.
+      closeUsed.current.add(card.word.id);
+      setQueue([...queue, repeatCard(card)]);
+      setIndex(index + 1);
+      return;
+    }
+    // A repeated "I was close" counts exactly like "I didn't know it".
+    commit({ outcome: rating === 'known' ? 'correct' : 'incorrect' });
   };
 
   const progress = (index / queue.length) * 100;
@@ -102,7 +118,8 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
           key={card.key}
           card={card}
           active={active}
-          onRate={(knewIt) => commit({ outcome: knewIt ? 'correct' : 'incorrect' })}
+          closeCountsAsMiss={closeUsed.current.has(card.word.id)}
+          onRate={rateFlashcard}
         />
       )}
       {card.mode === 'multiple-choice' && (

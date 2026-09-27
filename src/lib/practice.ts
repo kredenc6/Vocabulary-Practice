@@ -116,6 +116,11 @@ export function makeCard(word: VocabWord, settings: PracticeSettings, pool: Voca
   return { key: `c${cardCounter++}`, word, direction, mode: 'flashcard' };
 }
 
+/** Ask the same card again (same word, mode and direction) under a new key. */
+export function repeatCard(card: PracticeCard): PracticeCard {
+  return { ...card, key: `c${cardCounter++}` };
+}
+
 /** Number of distinct translations available, used to decide if multiple choice is possible. */
 export function canUseMultipleChoice(words: VocabWord[]): boolean {
   const english = new Set(words.map((w) => w.english.trim().toLowerCase()));
