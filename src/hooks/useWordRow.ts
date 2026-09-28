@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useWords } from '../context/words';
-import { formToWordUpdate, wordToFormValues } from '../lib/wordForm';
+import { formCompletenessFields, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
+import { isComplete } from '../lib/wordValidation';
 import type { WordFormValues } from '../lib/wordForm';
 import type { VocabWord } from '../types';
 
@@ -18,8 +19,16 @@ export interface WordRowState {
   resetProgress: () => void;
 }
 
+export interface WordRowOptions {
+  /**
+   * Called after a complete word was saved as a draft. Its row leaves the
+   * vocabulary list at that point, so the list shows the message instead.
+   */
+  onMovedToDrafts?: (label: string) => void;
+}
+
 /** Edit/delete state shared by the vocabulary list and the drafts list. */
-export function useWordRow(word: VocabWord): WordRowState {
+export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions = {}): WordRowState {
   const { updateWord, deleteWord, resetProgress } = useWords();
   const [mode, setMode] = useState<WordRowMode>('view');
   const [values, setValues] = useState<WordFormValues>(() => wordToFormValues(word));
@@ -39,9 +48,11 @@ export function useWordRow(word: VocabWord): WordRowState {
     // An incomplete word simply stays (or becomes) a draft – the status is derived,
     // so the row moves between the vocabulary list and Drafts by itself.
     async save() {
+      const becomesDraft = isComplete(word) && !isComplete(formCompletenessFields(values));
       try {
         await updateWord(word.id, formToWordUpdate(values));
         setMode('view');
+        if (becomesDraft) onMovedToDrafts?.(wordLabel(values));
       } catch (err) {
         console.error(err);
         setError('Could not save changes.');

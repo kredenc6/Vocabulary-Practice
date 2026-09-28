@@ -802,7 +802,15 @@ kbd, .kbd {
 .word-text { overflow-wrap: anywhere; }
 .word-es { font-weight: 600; }
 .word-actions { display: flex; justify-content: flex-end; gap: 0.15rem; }
-.word-row.editing { display: block; padding-block: 1rem; }
+/* The row being edited: a light accent frame so it stands apart from its neighbours and the header. */
+.word-list .word-row.editing {
+  display: block;
+  margin-block: 0.5rem;
+  padding: 1rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 55%, transparent);
+  border-radius: var(--radius-sm);
+  background: color-mix(in srgb, var(--accent-soft) 50%, var(--surface));
+}
 
 @media (max-width: 720px) {
   .word-row-head { display: none; }

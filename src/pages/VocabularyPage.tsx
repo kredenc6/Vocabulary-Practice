@@ -29,6 +29,8 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
   // The main list shows complete words only; drafts live in the Drafts tab.
   const { practiceWords: words, draftWords } = useWords();
   const draftCount = draftWords.length;
+  /** Label of the last word that an edit turned into a draft (it left this list). */
+  const [movedToDrafts, setMovedToDrafts] = useState<string | null>(null);
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortKey>('newest');
@@ -72,6 +74,19 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
       </div>
 
       <div className="card">
+        {movedToDrafts && (
+          <div className="alert alert-success row row-between" role="status" style={{ marginBottom: '0.75rem' }}>
+            <span>Saved "{movedToDrafts}" to drafts.</span>
+            <span className="row">
+              <button type="button" className="link-btn" onClick={onGoToDrafts}>
+                Open drafts
+              </button>
+              <button type="button" className="icon-btn" onClick={() => setMovedToDrafts(null)} aria-label="Dismiss">
+                ✕
+              </button>
+            </span>
+          </div>
+        )}
         <div className="toolbar">
           <input
             className="input"
@@ -139,7 +154,7 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
               <span />
             </div>
             {filtered.slice(0, visible).map((w) => (
-              <WordRow key={w.id} word={w} now={now} />
+              <WordRow key={w.id} word={w} now={now} onMovedToDrafts={setMovedToDrafts} />
             ))}
           </div>
         )}

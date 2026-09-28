@@ -27,6 +27,13 @@ export function wordToFormValues(word: VocabWordData): WordFormValues {
   };
 }
 
+/** Short display label used in messages, e.g. "casa – house" or just "casa". */
+export function wordLabel(word: { spanish: string; english: string }): string {
+  const spanish = word.spanish.trim();
+  const english = word.english.trim();
+  return english ? `${spanish} – ${english}` : spanish;
+}
+
 export function nounFieldsApply(type: WordType | ''): boolean {
   return type === 'noun';
 }

@@ -13,9 +13,15 @@ export function StatusBadge({ status }: { status: WordStatus }) {
   );
 }
 
+interface Props {
+  word: VocabWord;
+  now: number;
+  onMovedToDrafts?: (label: string) => void;
+}
+
 /** A complete word in the vocabulary list. */
-export function WordRow({ word, now }: { word: VocabWord; now: number }) {
-  const state = useWordRow(word);
+export function WordRow({ word, now, onMovedToDrafts }: Props) {
+  const state = useWordRow(word, { onMovedToDrafts });
 
   if (state.mode === 'edit') return <WordRowEditor word={word} state={state} />;
 

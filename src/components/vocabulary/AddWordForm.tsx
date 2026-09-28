@@ -1,7 +1,7 @@
 import { useRef, useState } from 'react';
 import { useWords } from '../../context/words';
 import { pairKey } from '../../lib/csv';
-import { EMPTY_WORD_FORM, formToWordInput } from '../../lib/wordForm';
+import { EMPTY_WORD_FORM, formToWordInput, wordLabel } from '../../lib/wordForm';
 import type { WordFormValues } from '../../lib/wordForm';
 import { isComplete } from '../../lib/wordValidation';
 import { WordForm } from './WordForm';
@@ -14,7 +14,7 @@ export function AddWordForm() {
 
   const handleSubmit = async () => {
     const input = formToWordInput(values);
-    const label = input.english ? `${input.spanish} – ${input.english}` : input.spanish;
+    const label = wordLabel(input);
 
     const key = pairKey(input);
     if (words.some((w) => pairKey(w) === key)) {
