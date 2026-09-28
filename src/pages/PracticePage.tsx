@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useUser } from '../context/auth';
 import { useWords } from '../context/words';
 import { loadSettings, makeCard, saveSettings, shuffle } from '../lib/practice';
+import { isComplete } from '../lib/wordValidation';
 import { saveSession } from '../services/statsRepo';
 import type { CardResult, PracticeCard, PracticeSettings, VocabWord } from '../types';
 import { PracticeSetup } from '../components/practice/PracticeSetup';
@@ -20,7 +21,8 @@ interface Props {
 
 export function PracticePage({ active, onGoToVocabulary }: Props) {
   const user = useUser();
-  const { words } = useWords();
+  // Drafts never reach practice: everything below works on complete words only.
+  const { words, practiceWords } = useWords();
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const [phase, setPhase] = useState<Phase>({ name: 'setup' });
 
@@ -30,11 +32,14 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
   };
 
   const start = (selected: VocabWord[], shuffleOrder = false) => {
-    const ordered = shuffleOrder ? shuffle(selected) : selected;
+    // A word may have become a draft since it was selected (e.g. "Review missed words").
+    const complete = selected.filter(isComplete);
+    if (complete.length === 0) return;
+    const ordered = shuffleOrder ? shuffle(complete) : complete;
     setPhase({
       name: 'session',
       id: Date.now(),
-      cards: ordered.map((w) => makeCard(w, settings, words)),
+      cards: ordered.map((w) => makeCard(w, settings, practiceWords)),
       startedAt: Date.now(),
     });
     window.scrollTo({ top: 0 });
@@ -55,14 +60,19 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
     setPhase({ name: 'summary', results });
   };
 
-  if (words.length === 0) {
+  if (practiceWords.length === 0) {
+    const drafts = words.length;
     return (
       <div className="card empty-state">
         <div className="emoji" aria-hidden="true">
           📚
         </div>
-        <h2>Your vocabulary is empty</h2>
-        <p>Add some Spanish–English word pairs or import a CSV file to start practicing.</p>
+        <h2>{drafts ? 'No words ready to practice' : 'Your vocabulary is empty'}</h2>
+        <p>
+          {drafts
+            ? `All ${drafts} of your words are drafts (missing translation, word type or article) and can't be practiced yet.`
+            : 'Add some Spanish–English word pairs or import a CSV file to start practicing.'}
+        </p>
         <button type="button" className="btn btn-primary" onClick={onGoToVocabulary}>
           Add words
         </button>
@@ -98,7 +108,7 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
               <p>Choose how you want to practice, then start a session.</p>
             </div>
           </div>
-          <PracticeSetup words={words} settings={settings} onChange={changeSettings} onStart={(s) => start(s)} />
+          <PracticeSetup words={practiceWords} settings={settings} onChange={changeSettings} onStart={(s) => start(s)} />
         </>
       );
   }

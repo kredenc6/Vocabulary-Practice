@@ -7,6 +7,7 @@ import type {
   QueryDocumentSnapshot,
 } from 'firebase/firestore';
 import type { DailyStat, PracticeSessionRecord, VocabWord } from '../types';
+import { isArticle, isWordType } from '../constants/word';
 import { initialSrsState } from '../lib/srs';
 import { db } from './firebase';
 
@@ -14,14 +15,20 @@ function num(value: unknown, fallback: number): number {
   return typeof value === 'number' && Number.isFinite(value) ? value : fallback;
 }
 
-/** The document id is never stored as a field. */
+/** The document id is never stored as a field, and `undefined` values are never written. */
 function withoutId<T extends object>(model: PartialWithFieldValue<T>): DocumentData {
-  const data: DocumentData = { ...model };
-  delete data.id;
+  const data: DocumentData = {};
+  for (const [key, value] of Object.entries(model)) {
+    if (key !== 'id' && value !== undefined) data[key] = value;
+  }
   return data;
 }
 
-/** Converts Firestore documents to VocabWord, filling defaults for missing fields. */
+/**
+ * Converts Firestore documents to VocabWord, filling defaults for missing SRS
+ * fields. Optional word fields are only set when present and valid, so
+ * documents without them (or with unknown values) read as "not filled in".
+ */
 const wordConverter: FirestoreDataConverter<VocabWord> = {
   toFirestore: (word: PartialWithFieldValue<VocabWord>) => withoutId(word),
   fromFirestore(snapshot: QueryDocumentSnapshot): VocabWord {
@@ -42,6 +49,10 @@ const wordConverter: FirestoreDataConverter<VocabWord> = {
       lapses: num(d.lapses, 0),
       totalReviews: num(d.totalReviews, 0),
       correctReviews: num(d.correctReviews, 0),
+      ...(isWordType(d.type) && { type: d.type }),
+      ...(isArticle(d.article) && { article: d.article }),
+      ...(typeof d.plural === 'string' && d.plural.trim() && { plural: d.plural }),
+      ...(typeof d.schemaVersion === 'number' && { schemaVersion: d.schemaVersion }),
     };
   },
 };

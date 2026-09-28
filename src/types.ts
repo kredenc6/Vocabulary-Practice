@@ -1,3 +1,5 @@
+import type { Article, WordType } from './constants/word';
+
 /** Epoch milliseconds (Date.now()). Stored as a number in Firestore. */
 export type EpochMs = number;
 
@@ -19,23 +21,55 @@ export interface SrsState {
   correctReviews: number;
 }
 
-/** A vocabulary pair as stored in Firestore at users/{uid}/words/{id}. */
+/**
+ * A vocabulary word as stored in Firestore at users/{uid}/words/{id}.
+ * Optional fields that are absent mean "not filled in" and are omitted from
+ * the document (never stored as undefined/null). See docs/word-model.md.
+ */
 export interface VocabWordData extends SrsState {
+  /** The Spanish word WITHOUT its article. Required, non-empty. */
   spanish: string;
+  /** English translation. May be empty while the word is a draft. */
   english: string;
+  type?: WordType;
+  /** `not_used` = noun used without article; absent = not filled in. */
+  article?: Article;
+  /** Plural form, without article. */
+  plural?: string;
+  /** Written as WORD_SCHEMA_VERSION on every write; absent only on legacy documents. */
+  schemaVersion?: number;
   createdAt: EpochMs;
   updatedAt: EpochMs;
 }
 
-/** A vocabulary pair including its Firestore document id. */
+/** A vocabulary word including its Firestore document id. */
 export interface VocabWord extends VocabWordData {
   id: string;
 }
 
-/** The two editable text fields of a word. */
+/** The two basic text fields of a word (used by CSV import). */
 export interface WordPairInput {
   spanish: string;
   english: string;
+}
+
+/** Editable fields when creating a word. Omitted optional fields are not written. */
+export interface WordInput extends WordPairInput {
+  type?: WordType;
+  article?: Article;
+  plural?: string;
+}
+
+/**
+ * Changes to an existing word. Omitted keys stay unchanged; `null` clears an
+ * optional field (removed from the document with deleteField()).
+ */
+export interface WordUpdate {
+  spanish?: string;
+  english?: string;
+  type?: WordType | null;
+  article?: Article | null;
+  plural?: string | null;
 }
 
 export type WordStatus = 'new' | 'learning' | 'mastered';

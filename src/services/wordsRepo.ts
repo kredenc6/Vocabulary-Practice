@@ -1,5 +1,6 @@
 import {
   deleteDoc,
+  deleteField,
   doc,
   increment,
   onSnapshot,
@@ -9,29 +10,46 @@ import {
   updateDoc,
   writeBatch,
 } from 'firebase/firestore';
-import type { Unsubscribe } from 'firebase/firestore';
+import type { FieldValue, Unsubscribe } from 'firebase/firestore';
+import { WORD_SCHEMA_VERSION } from '../constants/word';
 import { db } from '../firebase/firebase';
 import { dailyStatDocRaw, wordDoc, wordsCol } from '../firebase/paths';
 import { applyReview, initialSrsState, outcomeToQuality, pickSrs } from '../lib/srs';
 import { dayKey } from '../lib/dates';
-import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordPairInput } from '../types';
+import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordPairInput, WordUpdate } from '../types';
 
 /** Firestore allows at most 500 writes per batch. */
 const BATCH_SIZE = 400;
 
-function cleanPair(pair: WordPairInput): WordPairInput {
-  return { spanish: pair.spanish.trim(), english: pair.english.trim() };
+/** Trimmed input; absent or empty optional fields are left out entirely (never undefined). */
+function cleanInput(input: WordInput): WordInput {
+  const plural = input.plural?.trim();
+  return {
+    spanish: input.spanish.trim(),
+    english: input.english.trim(),
+    ...(input.type && { type: input.type }),
+    ...(input.article && { article: input.article }),
+    ...(plural && { plural }),
+  };
 }
 
-function newWord(uid: string, pair: WordPairInput, now: number): VocabWord {
+function newWord(uid: string, input: WordInput, now: number): VocabWord {
   const ref = doc(wordsCol(uid));
   return {
     id: ref.id,
-    ...cleanPair(pair),
+    ...cleanInput(input),
     ...initialSrsState(now),
     createdAt: now,
     updatedAt: now,
+    schemaVersion: WORD_SCHEMA_VERSION,
   };
+}
+
+/** Optional field update: omitted → unchanged, null/empty → deleteField(). */
+function optionalField<T extends string>(value: T | null | undefined): T | FieldValue | undefined {
+  if (value === undefined) return undefined;
+  if (value === null || !value.trim()) return deleteField();
+  return value.trim() as T;
 }
 
 export function subscribeWords(
@@ -43,13 +61,27 @@ export function subscribeWords(
   return onSnapshot(q, (snap) => onData(snap.docs.map((d) => d.data())), onError);
 }
 
-export async function addWord(uid: string, pair: WordPairInput): Promise<void> {
-  const word = newWord(uid, pair, Date.now());
+export async function addWord(uid: string, input: WordInput): Promise<void> {
+  const word = newWord(uid, input, Date.now());
   await setDoc(wordDoc(uid, word.id), word);
 }
 
-export async function updateWordText(uid: string, wordId: string, pair: WordPairInput): Promise<void> {
-  await updateDoc(wordDoc(uid, wordId), { ...cleanPair(pair), updatedAt: Date.now() });
+export async function updateWord(uid: string, wordId: string, changes: WordUpdate): Promise<void> {
+  const data: Record<string, string | number | FieldValue> = {
+    updatedAt: Date.now(),
+    schemaVersion: WORD_SCHEMA_VERSION,
+  };
+  if (changes.spanish !== undefined) {
+    const spanish = changes.spanish.trim();
+    if (!spanish) throw new Error('The Spanish word cannot be empty.');
+    data.spanish = spanish;
+  }
+  if (changes.english !== undefined) data.english = changes.english.trim();
+  for (const key of ['type', 'article', 'plural'] as const) {
+    const value = optionalField(changes[key]);
+    if (value !== undefined) data[key] = value;
+  }
+  await updateDoc(wordDoc(uid, wordId), data);
 }
 
 export async function deleteWord(uid: string, wordId: string): Promise<void> {
@@ -74,7 +106,11 @@ export async function importWords(uid: string, pairs: WordPairInput[]): Promise<
 /** Reset the learning progress of a word to "new". */
 export async function resetWordProgress(uid: string, wordId: string): Promise<void> {
   const now = Date.now();
-  await updateDoc(wordDoc(uid, wordId), { ...initialSrsState(now), updatedAt: now });
+  await updateDoc(wordDoc(uid, wordId), {
+    ...initialSrsState(now),
+    updatedAt: now,
+    schemaVersion: WORD_SCHEMA_VERSION,
+  });
 }
 
 /**
@@ -92,7 +128,7 @@ export function recordReview(
   const day = dayKey(now);
 
   const batch = writeBatch(db);
-  batch.update(wordDoc(uid, word.id), { ...next, updatedAt: now });
+  batch.update(wordDoc(uid, word.id), { ...next, updatedAt: now, schemaVersion: WORD_SCHEMA_VERSION });
   batch.set(
     dailyStatDocRaw(uid, day),
     { date: day, reviews: increment(1), correct: increment(outcome === 'incorrect' ? 0 : 1) },

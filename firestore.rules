@@ -13,9 +13,24 @@ service cloud.firestore {
       return value is string && value.size() > 0 && value.size() <= maxLen;
     }
 
+    // Keep these lists in sync with src/constants/word.ts.
+    function wordTypes() {
+      return ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition',
+              'conjunction', 'interjection', 'phrase'];
+    }
+
+    function articles() {
+      return ['un', 'una', 'el', 'la', 'not_used'];
+    }
+
+    // Optional fields may be absent ("not filled in") but must be valid when present.
     function isValidWord(data) {
       return isShortString(data.spanish, 300)
-        && isShortString(data.english, 300)
+        && data.english is string && data.english.size() <= 300 // may be empty (drafts)
+        && (!('type' in data) || data.type in wordTypes())
+        && (!('article' in data) || data.article in articles())
+        && (!('plural' in data) || (data.plural is string && data.plural.size() <= 300))
+        && data.schemaVersion is int
         && data.easeFactor is number
         && data.interval is number
         && data.repetitions is int

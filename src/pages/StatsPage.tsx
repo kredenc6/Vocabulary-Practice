@@ -29,7 +29,9 @@ const SHORT_MODE: Record<PracticeMode, string> = { flashcard: 'Cards', 'multiple
 
 export function StatsPage() {
   const user = useUser();
-  const { words } = useWords();
+  // Statistics count complete words only; drafts are reported but not counted.
+  const { words: allWords, practiceWords: words } = useWords();
+  const draftCount = allWords.length - words.length;
   const { sessions, dailyStats, loading, error } = useStatsData(user.uid, CHART_SESSIONS, 90);
 
   const counts = useMemo(() => statusCounts(words), [words]);
@@ -43,7 +45,11 @@ export function StatsPage() {
   const streak = currentStreak(dailyStats);
 
   const tiles: Tile[] = [
-    { label: 'Total words', value: words.length.toLocaleString('en-US'), sub: 'in your vocabulary' },
+    {
+      label: 'Total words',
+      value: words.length.toLocaleString('en-US'),
+      sub: draftCount ? `+ ${draftCount} draft${draftCount === 1 ? '' : 's'} not counted` : 'in your vocabulary',
+    },
     { label: 'Due now', value: String(dueCount(words)), sub: 'ready for review' },
     { label: 'New', value: String(counts.new), sub: 'not practiced yet' },
     { label: 'Learning', value: String(counts.learning), sub: 'in progress' },

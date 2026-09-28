@@ -26,7 +26,8 @@ interface Props {
 const MAX_REPEATS_PER_WORD = 2;
 
 export function PracticeSession({ initialCards, settings, active, onFinish }: Props) {
-  const { words, recordReview } = useWords();
+  // Complete words only: a word that became a draft mid-session is no longer recorded or re-asked.
+  const { practiceWords, recordReview } = useWords();
   const [queue, setQueue] = useState(initialCards);
   const [index, setIndex] = useState(0);
   const [results, setResults] = useState<CardResult[]>([]);
@@ -42,10 +43,10 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
 
   /** Save the answer to the word's SRS state and move to the next card. */
   const commit = (answer: PendingAnswer) => {
-    const stored = words.find((w) => w.id === card.word.id);
+    const stored = practiceWords.find((w) => w.id === card.word.id);
     const base = latest.current.get(card.word.id) ?? stored ?? card.word;
     let updated = base;
-    // Skip persisting if the word was deleted in the meantime.
+    // Skip persisting if the word was deleted or became a draft in the meantime.
     if (stored) {
       updated = { ...base, ...recordReview(base, answer.outcome, card.mode) };
       latest.current.set(updated.id, updated);
@@ -55,11 +56,11 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
     setResults(nextResults);
 
     let nextQueue = queue;
-    if (answer.outcome === 'incorrect' && settings.repeatMistakes) {
+    if (stored && answer.outcome === 'incorrect' && settings.repeatMistakes) {
       const count = repeats.current.get(updated.id) ?? 0;
       if (count < MAX_REPEATS_PER_WORD) {
         repeats.current.set(updated.id, count + 1);
-        nextQueue = [...queue, makeCard(updated, settings, words)];
+        nextQueue = [...queue, makeCard(updated, settings, practiceWords)];
         setQueue(nextQueue);
       }
     }

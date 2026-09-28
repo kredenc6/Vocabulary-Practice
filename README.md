@@ -108,14 +108,15 @@ Every push to `main` now deploys automatically.
 ## Data model
 
 ```
-users/{uid}/words/{wordId}        VocabWord: spanish, english, easeFactor, interval,
-                                  repetitions, nextReviewDate, lastReviewedAt, lapses,
-                                  totalReviews, correctReviews, createdAt, updatedAt
+users/{uid}/words/{wordId}        VocabWord: spanish, english, type?, article?, plural?,
+                                  schemaVersion, easeFactor, interval, repetitions,
+                                  nextReviewDate, lastReviewedAt, lapses, totalReviews,
+                                  correctReviews, createdAt, updatedAt
 users/{uid}/sessions/{sessionId}  finished practice sessions (for accuracy history)
 users/{uid}/dailyStats/{YYYY-MM-DD}  per-day review counters (for the activity chart)
 ```
 
-All timestamps are epoch milliseconds. Types live in [`src/types.ts`](src/types.ts).
+All timestamps are epoch milliseconds. Types live in [`src/types.ts`](src/types.ts). The word fields, the draft rule (incomplete words are excluded from practice and statistics) and the word-type/article constants are described in [`docs/word-model.md`](docs/word-model.md).
 
 **Word status:** *New* means never practiced. *Learning* means the interval is under 21 days. *Mastered* means the interval is 21 days or more.
 

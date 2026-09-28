@@ -43,11 +43,11 @@ function UserMenu() {
 
 export function AppShell() {
   const [tab, setTab] = useHashTab(TABS, 'practice');
-  const { words, loading, error } = useWords();
+  const { practiceWords, loading, error } = useWords();
   const dueCount = useMemo(() => {
     const now = Date.now();
-    return words.filter((w) => isDue(w, now)).length;
-  }, [words]);
+    return practiceWords.filter((w) => isDue(w, now)).length;
+  }, [practiceWords]);
 
   return (
     <>

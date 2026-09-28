@@ -1,13 +1,18 @@
 import { createContext, useContext } from 'react';
-import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordPairInput } from '../types';
+import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordPairInput, WordUpdate } from '../types';
 
 export interface WordsContextValue {
-  /** All words of the signed-in user, newest first. Kept in sync in real time. */
+  /** All words of the signed-in user (drafts included), newest first. Kept in sync in real time. */
   words: VocabWord[];
+  /**
+   * Complete words only (see isComplete in lib/wordValidation). Practice and
+   * statistics must use this list – drafts never reach them.
+   */
+  practiceWords: VocabWord[];
   loading: boolean;
   error: string | null;
-  addWord: (pair: WordPairInput) => Promise<void>;
-  updateWord: (id: string, pair: WordPairInput) => Promise<void>;
+  addWord: (input: WordInput) => Promise<void>;
+  updateWord: (id: string, changes: WordUpdate) => Promise<void>;
   deleteWord: (id: string) => Promise<void>;
   resetProgress: (id: string) => Promise<void>;
   importPairs: (pairs: WordPairInput[]) => Promise<number>;
