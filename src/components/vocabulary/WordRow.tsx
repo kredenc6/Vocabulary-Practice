@@ -1,9 +1,11 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
 import { useWords } from '../../context/words';
 import { formatDue } from '../../lib/dates';
 import { STATUS_LABELS, wordStatus } from '../../lib/srs';
+import { formToWordUpdate, wordToFormValues } from '../../lib/wordForm';
+import type { WordFormValues } from '../../lib/wordForm';
 import type { VocabWord, WordStatus } from '../../types';
+import { WordForm } from './WordForm';
 
 export function StatusBadge({ status }: { status: WordStatus }) {
   return (
@@ -34,22 +36,19 @@ function TrashIcon() {
 export function WordRow({ word, now }: { word: VocabWord; now: number }) {
   const { updateWord, deleteWord, resetProgress } = useWords();
   const [mode, setMode] = useState<'view' | 'edit' | 'confirm-delete'>('view');
-  const [spanish, setSpanish] = useState(word.spanish);
-  const [english, setEnglish] = useState(word.english);
+  const [values, setValues] = useState<WordFormValues>(() => wordToFormValues(word));
   const [error, setError] = useState<string | null>(null);
 
   const startEdit = () => {
-    setSpanish(word.spanish);
-    setEnglish(word.english);
+    setValues(wordToFormValues(word));
     setError(null);
     setMode('edit');
   };
 
-  const save = async (event: FormEvent) => {
-    event.preventDefault();
-    if (!spanish.trim() || !english.trim()) return;
+  // An incomplete word simply stays (or becomes) a draft – the status is derived.
+  const save = async () => {
     try {
-      await updateWord(word.id, { spanish, english });
+      await updateWord(word.id, formToWordUpdate(values));
       setMode('view');
     } catch (err) {
       console.error(err);
@@ -69,34 +68,21 @@ export function WordRow({ word, now }: { word: VocabWord; now: number }) {
 
   if (mode === 'edit') {
     return (
-      <form className="word-row editing" onSubmit={save}>
-        <input
-          className="input"
-          value={spanish}
-          onChange={(e) => setSpanish(e.target.value)}
-          aria-label="Spanish"
-          lang="es"
-          maxLength={300}
+      <div className="word-row editing">
+        <WordForm
+          values={values}
+          onChange={setValues}
+          onSubmit={save}
+          submitLabels={{ complete: 'Save', draft: 'Save as draft' }}
           autoFocus
-        />
-        <input
-          className="input"
-          value={english}
-          onChange={(e) => setEnglish(e.target.value)}
-          aria-label="English"
-          maxLength={300}
-        />
-        <div className="row">
-          <button type="submit" className="btn btn-primary btn-sm" disabled={!spanish.trim() || !english.trim()}>
-            Save
-          </button>
-          <button type="button" className="btn btn-ghost btn-sm" onClick={() => setMode('view')}>
+        >
+          <button type="button" className="btn btn-ghost" onClick={() => setMode('view')}>
             Cancel
           </button>
           {word.lastReviewedAt !== null && (
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="btn btn-ghost"
               title="Reset learning progress to “new”"
               onClick={() => {
                 void resetProgress(word.id);
@@ -106,9 +92,9 @@ export function WordRow({ word, now }: { word: VocabWord; now: number }) {
               Reset progress
             </button>
           )}
-        </div>
+        </WordForm>
         {error && <span className="small" style={{ color: 'var(--bad-text)' }}>{error}</span>}
-      </form>
+      </div>
     );
   }
 

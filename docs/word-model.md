@@ -40,6 +40,14 @@ Anything else is a **draft**. The status is always derived with `isComplete` / `
 
 Drafts never reach practice or statistics. `WordsContext.practiceWords` is the complete-words list and is the only list practice and statistics code may use. `WordsContext.words` holds everything, drafts included; it's used for the vocabulary list, duplicate checks and CSV export.
 
+## Add/edit form
+
+Adding and editing use one shared form: [`WordForm`](../src/components/vocabulary/WordForm.tsx). Conversions live in [`src/lib/wordForm.ts`](../src/lib/wordForm.ts).
+
+- **Enabled fields:** article and plural are enabled only when type is `noun`. Changing the type away from noun clears them.
+- **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
+- **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
+
 ## Constants
 
 Defined as `as const` arrays with derived union types (no enums). The UI uses the label maps.

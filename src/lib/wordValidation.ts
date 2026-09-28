@@ -12,6 +12,14 @@ export type WordCompletenessFields = Pick<VocabWordData, 'spanish' | 'english' |
 
 export type MandatoryField = 'spanish' | 'english' | 'type' | 'article';
 
+/** UI labels for missing-field hints. */
+export const MANDATORY_FIELD_LABELS: Record<MandatoryField, string> = {
+  spanish: 'Spanish word',
+  english: 'English translation',
+  type: 'type',
+  article: 'article',
+};
+
 /** Mandatory fields that are missing, in a stable order. Empty for complete words. */
 export function getMissingFields(word: WordCompletenessFields): MandatoryField[] {
   const missing: MandatoryField[] = [];
