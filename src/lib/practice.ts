@@ -8,6 +8,7 @@ import type {
 } from '../types';
 import { sameAnswer } from './answerCheck';
 import { isDue } from './srs';
+import { formatSpanish } from './wordDisplay';
 
 export const MODE_LABELS: Record<PracticeMode, string> = {
   flashcard: 'Flashcards',
@@ -50,8 +51,14 @@ export function answerSide(direction: CardDirection): 'spanish' | 'english' {
   return direction === 'es-en' ? 'english' : 'spanish';
 }
 
-export const promptText = (card: PracticeCard) => card.word[promptSide(card.direction)];
-export const answerText = (card: PracticeCard) => card.word[answerSide(card.direction)];
+/** Text of one side of a word: the formatted Spanish ("un hombre") or the English translation. */
+export function sideText(word: VocabWord, side: 'spanish' | 'english'): string {
+  return side === 'spanish' ? formatSpanish(word) : word.english;
+}
+
+export const promptText = (card: PracticeCard) => sideText(card.word, promptSide(card.direction));
+/** The expected answer: typed answers are checked against it, and it's the correct multiple-choice option. */
+export const answerText = (card: PracticeCard) => sideText(card.word, answerSide(card.direction));
 
 /** Due words: overdue reviews first (most overdue first), then new words (oldest first). */
 function dueWords(words: VocabWord[], now: number): VocabWord[] {
@@ -83,11 +90,11 @@ export function selectWords(words: VocabWord[], source: WordSource, size: number
 /** Build answer options: the correct translation plus distinct distractors. */
 function buildOptions(word: VocabWord, direction: CardDirection, pool: VocabWord[]): string[] | null {
   const side = answerSide(direction);
-  const correct = word[side];
+  const correct = sideText(word, side);
   const distractors: string[] = [];
   for (const candidate of shuffle(pool)) {
     if (candidate.id === word.id) continue;
-    const text = candidate[side];
+    const text = sideText(candidate, side);
     if (sameAnswer(text, correct) || distractors.some((d) => sameAnswer(d, text))) continue;
     distractors.push(text);
     if (distractors.length === DISTRACTORS) break;
@@ -124,7 +131,7 @@ export function repeatCard(card: PracticeCard): PracticeCard {
 /** Number of distinct translations available, used to decide if multiple choice is possible. */
 export function canUseMultipleChoice(words: VocabWord[]): boolean {
   const english = new Set(words.map((w) => w.english.trim().toLowerCase()));
-  const spanish = new Set(words.map((w) => w.spanish.trim().toLowerCase()));
+  const spanish = new Set(words.map((w) => formatSpanish(w).toLowerCase()));
   return Math.min(english.size, spanish.size) >= DISTRACTORS + 1;
 }
 

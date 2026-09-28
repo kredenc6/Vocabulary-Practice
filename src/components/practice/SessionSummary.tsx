@@ -1,5 +1,6 @@
 import { useMemo } from 'react';
 import type { CardResult, VocabWord } from '../../types';
+import { SpanishWord } from '../SpanishWord';
 
 interface Props {
   results: CardResult[];
@@ -69,7 +70,9 @@ export function SessionSummary({ results, onReviewMistakes, onDone }: Props) {
           <ul className="missed-list">
             {summary.missed.map((w) => (
               <li key={w.id}>
-                <strong lang="es">{w.spanish}</strong>
+                <strong>
+                  <SpanishWord word={w} />
+                </strong>
                 <span className="muted">{w.english}</span>
               </li>
             ))}

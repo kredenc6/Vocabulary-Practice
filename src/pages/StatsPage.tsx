@@ -3,6 +3,7 @@ import { useUser } from '../context/auth';
 import { useWords } from '../context/words';
 import { useStatsData } from '../hooks/useStatsData';
 import { formatDateTime } from '../lib/dates';
+import { formatSpanish } from '../lib/wordDisplay';
 import {
   accuracyOver,
   currentStreak,
@@ -151,7 +152,7 @@ export function StatsPage() {
                     <tbody>
                       {hardest.map((w) => (
                         <tr key={w.id}>
-                          <td lang="es">{w.spanish}</td>
+                          <td lang="es">{formatSpanish(w)}</td>
                           <td>{w.english}</td>
                           <td className="num">
                             {w.totalReviews - w.correctReviews}/{w.totalReviews}

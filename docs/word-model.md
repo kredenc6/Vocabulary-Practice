@@ -54,6 +54,15 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
 - **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
 - **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
 
+## Display and grading
+
+- **`formatSpanish(word)`** ([`src/lib/wordDisplay.ts`](../src/lib/wordDisplay.ts)) returns `article + " " + spanish`, or just `spanish` when the article is absent or `not_used`. Examples: "un hombre", "una maleta", "México". Use it everywhere the Spanish word is shown to the learner: practice prompts, flashcards, multiple-choice options, feedback, lists and messages.
+- **Typed English → Spanish:** the expected answer is `formatSpanish(word)`, so the article belongs in the answer. The comparison logic in [`answerCheck.ts`](../src/lib/answerCheck.ts) is unchanged: a missing or wrong article is graded "close enough", with a hint.
+- **Plural:** shown as small muted text ("pl. hombres") by the `SpanishWord` / `WordSide` components ([`src/components/SpanishWord.tsx`](../src/components/SpanishWord.tsx)), and only where the Spanish word itself is visible.
+  - It never appears in an English → Spanish prompt before the answer is revealed.
+  - It's never graded, never a multiple-choice option, and never affects SRS or statistics.
+- **Type** is never displayed in practice.
+
 ## Constants
 
 Defined as `as const` arrays with derived union types (no enums). The UI uses the label maps.

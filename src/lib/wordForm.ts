@@ -5,6 +5,7 @@
 import type { Article, WordType } from '../constants/word';
 import type { VocabWordData, WordInput, WordUpdate } from '../types';
 import type { WordCompletenessFields } from './wordValidation';
+import { formatSpanish } from './wordDisplay';
 
 /** Raw form state; `''` means "not selected / not filled in". */
 export interface WordFormValues {
@@ -27,9 +28,9 @@ export function wordToFormValues(word: VocabWordData): WordFormValues {
   };
 }
 
-/** Short display label used in messages, e.g. "casa – house" or just "casa". */
-export function wordLabel(word: { spanish: string; english: string }): string {
-  const spanish = word.spanish.trim();
+/** Short display label used in messages, e.g. "la casa – house" or just "casa". */
+export function wordLabel(word: WordInput): string {
+  const spanish = formatSpanish(word);
   const english = word.english.trim();
   return english ? `${spanish} – ${english}` : spanish;
 }

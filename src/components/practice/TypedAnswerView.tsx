@@ -60,6 +60,7 @@ export function TypedAnswerView({ card, outcome, onAnswer }: Props) {
           <div className="row row-between" style={{ marginTop: '0.75rem' }}>
             <span className="shortcut-hint">
               <kbd>Enter</kbd> to check · accents & small typos are tolerated
+              {answerSide(card.direction) === 'spanish' && ' · include the article for nouns'}
             </span>
             <button type="button" className="btn btn-ghost btn-sm" onClick={() => onAnswer('incorrect', '')}>
               I don't know

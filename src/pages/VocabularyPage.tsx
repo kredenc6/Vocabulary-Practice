@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useWords } from '../context/words';
 import { normalize, stripAccents } from '../lib/answerCheck';
+import { formatSpanish } from '../lib/wordDisplay';
 import { STATUS_LABELS, isDue, wordStatus } from '../lib/srs';
 import type { VocabWord, WordStatus } from '../types';
 import { AddWordForm } from '../components/vocabulary/AddWordForm';
@@ -43,7 +44,12 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
     const result = words.filter((w) => {
       if (filter === 'due' && !isDue(w, at)) return false;
       if (filter !== 'all' && filter !== 'due' && wordStatus(w) !== filter) return false;
-      return !q || searchable(w.spanish).includes(q) || searchable(w.english).includes(q);
+      return (
+        !q ||
+        searchable(formatSpanish(w)).includes(q) ||
+        searchable(w.plural ?? '').includes(q) ||
+        searchable(w.english).includes(q)
+      );
     });
     return result.sort(SORTERS[sort]);
   }, [words, search, filter, sort]);

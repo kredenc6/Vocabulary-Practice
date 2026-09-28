@@ -2,6 +2,7 @@ import { useWordRow } from '../../hooks/useWordRow';
 import { formatDue } from '../../lib/dates';
 import { STATUS_LABELS, wordStatus } from '../../lib/srs';
 import type { VocabWord, WordStatus } from '../../types';
+import { SpanishWord } from '../SpanishWord';
 import { RowError, WordRowActions, WordRowEditor } from './WordRowParts';
 
 export function StatusBadge({ status }: { status: WordStatus }) {
@@ -28,8 +29,8 @@ export function WordRow({ word, now, onMovedToDrafts }: Props) {
   const status = wordStatus(word);
   return (
     <div className="word-row">
-      <span className="word-text word-es" lang="es">
-        {word.spanish}
+      <span className="word-text word-es">
+        <SpanishWord word={word} />
       </span>
       <span className="word-text word-en">{word.english}</span>
       <span className="word-status">

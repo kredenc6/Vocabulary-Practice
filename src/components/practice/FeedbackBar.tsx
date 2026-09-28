@@ -1,8 +1,10 @@
+import type { ReactNode } from 'react';
 import type { AnswerOutcome } from '../../types';
 
 interface Props {
   outcome: AnswerOutcome;
-  correctAnswer: string;
+  /** The correct answer as displayed (with the plural once the Spanish word is revealed). */
+  correctAnswer: ReactNode;
   note?: string;
   /** Offer "I was right" to accept an answer the checker rejected (e.g. a synonym). */
   canOverride: boolean;

@@ -1,4 +1,5 @@
 import type { WordRowState } from '../../hooks/useWordRow';
+import { formatSpanish } from '../../lib/wordDisplay';
 import type { VocabWord } from '../../types';
 import { WordForm } from './WordForm';
 
@@ -64,14 +65,14 @@ export function WordRowActions({ word, state }: { word: VocabWord; state: WordRo
         </span>
       ) : (
         <>
-          <button type="button" className="icon-btn" onClick={state.startEdit} aria-label={`Edit ${word.spanish}`} title="Edit">
+          <button type="button" className="icon-btn" onClick={state.startEdit} aria-label={`Edit ${formatSpanish(word)}`} title="Edit">
             <EditIcon />
           </button>
           <button
             type="button"
             className="icon-btn danger"
             onClick={() => state.setMode('confirm-delete')}
-            aria-label={`Delete ${word.spanish}`}
+            aria-label={`Delete ${formatSpanish(word)}`}
             title="Delete"
           >
             <TrashIcon />

@@ -1,6 +1,7 @@
 import { useWordRow } from '../../hooks/useWordRow';
 import { MISSING_FIELD_TAGS, getMissingFields } from '../../lib/wordValidation';
 import type { VocabWord } from '../../types';
+import { SpanishWord } from '../SpanishWord';
 import { RowError, WordRowActions, WordRowEditor } from './WordRowParts';
 
 /** A draft in the Drafts list: word, translation (if any) and what is missing. */
@@ -11,8 +12,8 @@ export function DraftRow({ word }: { word: VocabWord }) {
 
   return (
     <div className="word-row draft-row">
-      <span className="word-text word-es" lang="es">
-        {word.spanish}
+      <span className="word-text word-es">
+        <SpanishWord word={word} />
       </span>
       <span className={`word-text word-en${word.english ? '' : ' muted'}`}>{word.english || '—'}</span>
       <span className="missing-tags" aria-label="Missing">

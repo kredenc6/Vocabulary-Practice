@@ -1,6 +1,7 @@
 import { useRef, useState } from 'react';
 import { useWords } from '../../context/words';
-import { DIRECTION_LABELS, MODE_LABELS, answerText, makeCard, repeatCard } from '../../lib/practice';
+import { DIRECTION_LABELS, MODE_LABELS, answerSide, makeCard, repeatCard } from '../../lib/practice';
+import { WordSide } from '../SpanishWord';
 import type { AnswerOutcome, CardResult, PracticeCard, PracticeSettings, VocabWord } from '../../types';
 import { FeedbackBar } from './FeedbackBar';
 import { FlashcardView } from './FlashcardView';
@@ -143,7 +144,7 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
       {pending && (
         <FeedbackBar
           outcome={pending.outcome}
-          correctAnswer={answerText(card)}
+          correctAnswer={<WordSide word={card.word} side={answerSide(card.direction)} />}
           note={pending.note}
           canOverride={card.mode === 'typed' && pending.outcome === 'incorrect' && !!pending.userAnswer}
           onOverride={() => setPending({ ...pending, outcome: 'correct', note: 'Marked as correct.' })}

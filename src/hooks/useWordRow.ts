@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useWords } from '../context/words';
-import { formCompletenessFields, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
+import { formCompletenessFields, formToWordInput, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
 import { isComplete } from '../lib/wordValidation';
 import type { WordFormValues } from '../lib/wordForm';
 import type { VocabWord } from '../types';
@@ -52,7 +52,7 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
       try {
         await updateWord(word.id, formToWordUpdate(values));
         setMode('view');
-        if (becomesDraft) onMovedToDrafts?.(wordLabel(values));
+        if (becomesDraft) onMovedToDrafts?.(wordLabel(formToWordInput(values)));
       } catch (err) {
         console.error(err);
         setError('Could not save changes.');

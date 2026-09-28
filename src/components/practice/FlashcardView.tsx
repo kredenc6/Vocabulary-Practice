@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useHotkeys } from '../../hooks/useHotkeys';
-import { LANGUAGE_NAMES, answerSide, answerText, promptSide, promptText } from '../../lib/practice';
+import { LANGUAGE_NAMES, answerSide, promptSide } from '../../lib/practice';
+import { WordSide } from '../SpanishWord';
 import type { PracticeCard } from '../../types';
 
 export type FlashcardRating = 'unknown' | 'close' | 'known';
@@ -43,13 +44,19 @@ export function FlashcardView({ card, active, closeCountsAsMiss, onRate }: Props
         <div className="flashcard-inner">
           <div className="flashcard-face" aria-hidden={flipped}>
             <div className="prompt-lang">{LANGUAGE_NAMES[promptSide(card.direction)]}</div>
-            <div className="prompt-word">{promptText(card)}</div>
+            <div className="prompt-word">
+              <WordSide word={card.word} side={promptSide(card.direction)} />
+            </div>
             <div className="flashcard-hint">Recall the translation, then tap to flip</div>
           </div>
           <div className="flashcard-face flashcard-back" aria-hidden={!flipped}>
             <div className="prompt-lang">{LANGUAGE_NAMES[answerLang]}</div>
-            <div className="prompt-word">{answerText(card)}</div>
-            <div className="flashcard-hint">{promptText(card)}</div>
+            <div className="prompt-word">
+              <WordSide word={card.word} side={answerLang} />
+            </div>
+            <div className="flashcard-hint">
+              <WordSide word={card.word} side={promptSide(card.direction)} />
+            </div>
           </div>
         </div>
       </button>
