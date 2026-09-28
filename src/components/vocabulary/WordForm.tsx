@@ -1,8 +1,11 @@
+import { useState } from 'react';
 import type { FormEvent, ReactNode, Ref } from 'react';
 import { ARTICLES, ARTICLE_LABELS, WORD_TYPES, WORD_TYPE_LABELS, isArticle, isWordType } from '../../constants/word';
-import { formCompletenessFields, nounFieldsApply, withType } from '../../lib/wordForm';
+import { countForms } from '../../lib/conjugations';
+import { formCompletenessFields, nounFieldsApply, verbFieldsApply, withType } from '../../lib/wordForm';
 import type { WordFormValues } from '../../lib/wordForm';
 import { MANDATORY_FIELD_LABELS, getMissingFields } from '../../lib/wordValidation';
+import { ConjugationDialog } from './ConjugationDialog';
 
 interface Props {
   values: WordFormValues;
@@ -20,6 +23,9 @@ interface Props {
 /** Shared add/edit form. Incomplete words can be saved as drafts. */
 export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef, autoFocus, children }: Props) {
   const isNoun = nounFieldsApply(values.type);
+  const isVerb = verbFieldsApply(values.type);
+  const [conjugationsOpen, setConjugationsOpen] = useState(false);
+  const formCount = countForms(values.conjugations, values.gerund);
   const missing = getMissingFields(formCompletenessFields(values));
   const complete = missing.length === 0;
   const canSubmit = values.spanish.trim() !== '';
@@ -103,6 +109,33 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
           />
         </label>
       </div>
+
+      {/* Verbs only. Conjugations don't affect completeness and aren't used in practice (yet). */}
+      {isVerb && (
+        <div className="word-form-extra">
+          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConjugationsOpen(true)}>
+            Conjugations…
+            {formCount > 0 && (
+              <span className="count-pill" aria-label={`${formCount} filled`}>
+                {formCount}
+              </span>
+            )}
+          </button>
+          <span className="small muted">Optional</span>
+        </div>
+      )}
+      {conjugationsOpen && (
+        <ConjugationDialog
+          infinitive={values.spanish}
+          conjugations={values.conjugations}
+          gerund={values.gerund}
+          onDone={(conjugations, gerund) => {
+            onChange({ ...values, conjugations, gerund });
+            setConjugationsOpen(false);
+          }}
+          onCancel={() => setConjugationsOpen(false)}
+        />
+      )}
 
       <div className="word-form-footer">
         <p className="small muted" role="status">

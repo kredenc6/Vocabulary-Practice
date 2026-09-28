@@ -23,6 +23,40 @@ service cloud.firestore {
       return ['un', 'una', 'el', 'la', 'not_used'];
     }
 
+    // Keep in sync with src/constants/conjugation.ts (TENSE_CONFIG and PERSONS).
+    function tenses() {
+      return ['present', 'preterite', 'imperfect', 'conditional', 'future', 'imperative'];
+    }
+
+    function persons() {
+      return ['yo', 'tu', 'el', 'nosotros', 'vosotros', 'ellos'];
+    }
+
+    function isForm(value) {
+      return value is string && value.size() <= 300;
+    }
+
+    // conjugations[tense][person] = string
+    function isValidTense(m) {
+      return m is map && m.keys().hasOnly(persons())
+        && (!('yo' in m) || isForm(m.yo))
+        && (!('tu' in m) || isForm(m.tu))
+        && (!('el' in m) || isForm(m.el))
+        && (!('nosotros' in m) || isForm(m.nosotros))
+        && (!('vosotros' in m) || isForm(m.vosotros))
+        && (!('ellos' in m) || isForm(m.ellos));
+    }
+
+    function isValidConjugations(c) {
+      return c is map && c.keys().hasOnly(tenses())
+        && (!('present' in c) || isValidTense(c.present))
+        && (!('preterite' in c) || isValidTense(c.preterite))
+        && (!('imperfect' in c) || isValidTense(c.imperfect))
+        && (!('conditional' in c) || isValidTense(c.conditional))
+        && (!('future' in c) || isValidTense(c.future))
+        && (!('imperative' in c) || isValidTense(c.imperative));
+    }
+
     // Optional fields may be absent ("not filled in") but must be valid when present.
     function isValidWord(data) {
       return isShortString(data.spanish, 300)
@@ -30,6 +64,8 @@ service cloud.firestore {
         && (!('type' in data) || data.type in wordTypes())
         && (!('article' in data) || data.article in articles())
         && (!('plural' in data) || (data.plural is string && data.plural.size() <= 300))
+        && (!('conjugations' in data) || isValidConjugations(data.conjugations))
+        && (!('gerund' in data) || isForm(data.gerund))
         && data.schemaVersion is int
         && data.easeFactor is number
         && data.interval is number

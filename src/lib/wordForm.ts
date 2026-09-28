@@ -1,8 +1,11 @@
 /**
  * Form values for adding/editing a word and their conversion to the stored
- * model (see docs/word-model.md). Article and plural only apply to nouns.
+ * model (see docs/word-model.md). Article and plural only apply to nouns;
+ * conjugations and gerund only apply to verbs.
  */
+import type { Conjugations } from '../constants/conjugation';
 import type { Article, WordType } from '../constants/word';
+import { cleanConjugations, cleanGerund } from './conjugations';
 import type { VocabWordData, WordInput, WordUpdate } from '../types';
 import type { WordCompletenessFields } from './wordValidation';
 import { formatSpanish } from './wordDisplay';
@@ -14,9 +17,20 @@ export interface WordFormValues {
   type: WordType | '';
   article: Article | '';
   plural: string;
+  /** Raw editor state (may contain empty strings); cleaned on save. */
+  conjugations: Conjugations;
+  gerund: string;
 }
 
-export const EMPTY_WORD_FORM: WordFormValues = { spanish: '', english: '', type: '', article: '', plural: '' };
+export const EMPTY_WORD_FORM: WordFormValues = {
+  spanish: '',
+  english: '',
+  type: '',
+  article: '',
+  plural: '',
+  conjugations: {},
+  gerund: '',
+};
 
 export function wordToFormValues(word: VocabWordData): WordFormValues {
   return {
@@ -25,6 +39,8 @@ export function wordToFormValues(word: VocabWordData): WordFormValues {
     type: word.type ?? '',
     article: word.article ?? '',
     plural: word.plural ?? '',
+    conjugations: word.conjugations ?? {},
+    gerund: word.gerund ?? '',
   };
 }
 
@@ -39,7 +55,15 @@ export function nounFieldsApply(type: WordType | ''): boolean {
   return type === 'noun';
 }
 
-/** Change the type; article and plural are dropped when the type is no longer a noun. */
+export function verbFieldsApply(type: WordType | ''): boolean {
+  return type === 'verb';
+}
+
+/**
+ * Change the type; article and plural are dropped when the type is no longer a noun.
+ * Conjugations are kept in the form (so a mis-click doesn't lose them) but are only
+ * saved while the type is verb.
+ */
 export function withType(values: WordFormValues, type: WordType | ''): WordFormValues {
   return nounFieldsApply(type) ? { ...values, type } : { ...values, type, article: '', plural: '' };
 }
@@ -47,12 +71,15 @@ export function withType(values: WordFormValues, type: WordType | ''): WordFormV
 /** Trimmed values with the fields that don't apply to the chosen type removed. */
 function normalized(values: WordFormValues) {
   const noun = nounFieldsApply(values.type);
+  const verb = verbFieldsApply(values.type);
   return {
     spanish: values.spanish.trim(),
     english: values.english.trim(),
     type: values.type || undefined,
     article: (noun && values.article) || undefined,
     plural: (noun && values.plural.trim()) || undefined,
+    conjugations: verb ? cleanConjugations(values.conjugations) : undefined,
+    gerund: verb ? cleanGerund(values.gerund) : undefined,
   };
 }
 
@@ -63,12 +90,28 @@ export function formCompletenessFields(values: WordFormValues): WordCompleteness
 
 /** For creating a word: fields that are empty or don't apply are omitted. */
 export function formToWordInput(values: WordFormValues): WordInput {
-  const { spanish, english, type, article, plural } = normalized(values);
-  return { spanish, english, ...(type && { type }), ...(article && { article }), ...(plural && { plural }) };
+  const { spanish, english, type, article, plural, conjugations, gerund } = normalized(values);
+  return {
+    spanish,
+    english,
+    ...(type && { type }),
+    ...(article && { article }),
+    ...(plural && { plural }),
+    ...(conjugations && { conjugations }),
+    ...(gerund && { gerund }),
+  };
 }
 
 /** For updating a word: fields that are empty or don't apply are cleared (null → deleteField()). */
 export function formToWordUpdate(values: WordFormValues): WordUpdate {
-  const { spanish, english, type, article, plural } = normalized(values);
-  return { spanish, english, type: type ?? null, article: article ?? null, plural: plural ?? null };
+  const { spanish, english, type, article, plural, conjugations, gerund } = normalized(values);
+  return {
+    spanish,
+    english,
+    type: type ?? null,
+    article: article ?? null,
+    plural: plural ?? null,
+    conjugations: conjugations ?? null,
+    gerund: gerund ?? null,
+  };
 }

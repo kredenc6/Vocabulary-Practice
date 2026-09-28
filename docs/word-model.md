@@ -16,6 +16,8 @@ Words are stored per user at `users/{uid}/words/{wordId}`. The Firestore documen
 | `type` | `WordType`? | See [Constants](#constants). Absent = not filled in. |
 | `article` | `Article`? | Absent = not filled in. `not_used` = noun used without an article, which is **not** the same as absent. |
 | `plural` | string? | Plural form without its article, at most 300 characters. |
+| `conjugations` | `Conjugations`? | Verbs only. `conjugations[tense][person] = form`, only non-empty values. See [Verb conjugations](#verb-conjugations). |
+| `gerund` | string? | Verbs only, e.g. "trabajando". The estar + gerund forms are generated, not stored. |
 | `schemaVersion` | int | Always written as `WORD_SCHEMA_VERSION` (currently `1`) on every create and update. |
 | `createdAt`, `updatedAt` | int | Epoch milliseconds. |
 | `easeFactor`, `interval`, `repetitions`, `nextReviewDate`, `lastReviewedAt`, `lapses`, `totalReviews`, `correctReviews` | numbers | Spaced-repetition state (SM-2), see [`src/lib/srs.ts`](../src/lib/srs.ts). |
@@ -53,6 +55,21 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
 - **Enabled fields:** article and plural are enabled only when type is `noun`. Changing the type away from noun clears them.
 - **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
 - **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
+
+## Verb conjugations
+
+A verb's `spanish` is its infinitive (not validated). Conjugations are **data only**: they aren't shown in practice, and they don't affect completeness, so a verb with just an infinitive is complete.
+
+- **Config:** [`src/constants/conjugation.ts`](../src/constants/conjugation.ts) is the single source of truth.
+  - `TENSE_CONFIG` is an ordered list of `{ key, label, excludedPersons?, personLabels? }`. The tenses are present, preterite, imperfect, conditional, future and imperative.
+  - `PERSONS` are `yo`, `tu`, `el`, `nosotros`, `vosotros`, `ellos`, labelled "yo", "tú", "él/ella/Ud.", "nosotros", "vosotros", "ellos/ellas/Uds.".
+  - The imperative excludes `yo` and labels `el` / `ellos` as "Ud." / "Uds.".
+  - Keys are ASCII and stored; labels are UI-only.
+- **Adding a tense** (e.g. subjunctive): add one `TENSE_CONFIG` entry. The `Tense` type, the editor tabs and rows, and the cleaning logic follow automatically. Also add the key to `tenses()` and a check line to `isValidConjugations()` in `firestore.rules`.
+- **Cleaning:** [`src/lib/conjugations.ts`](../src/lib/conjugations.ts) (`cleanConjugations`, `cleanGerund`) is used by the form, the repository before writing, and the converter when reading. It keeps only known tenses and persons that apply, with trimmed non-empty strings of at most 300 characters. An empty result means the field is omitted on create and removed with `deleteField()` on update. Updates replace the whole `conjugations` map.
+- **Editing:** when type is `verb`, the shared form shows a "Conjugations…" button with a count of filled forms. It opens a dialog with one tab per tense, and excluded persons appear disabled.
+  - **Done** applies the changes to the form; they're saved with the word. **Cancel** or Escape discards them.
+  - If the type is changed away from verb, the conjugations stay in the form while editing but are removed on save.
 
 ## Display and grading
 

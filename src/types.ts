@@ -1,3 +1,4 @@
+import type { Conjugations } from './constants/conjugation';
 import type { Article, WordType } from './constants/word';
 
 /** Epoch milliseconds (Date.now()). Stored as a number in Firestore. */
@@ -36,6 +37,10 @@ export interface VocabWordData extends SrsState {
   article?: Article;
   /** Plural form, without article. */
   plural?: string;
+  /** Verbs only: conjugations[tense][person] = form. Only non-empty values are stored. */
+  conjugations?: Conjugations;
+  /** Verbs only: the gerund, e.g. "trabajando" (estar forms are generated, not stored). */
+  gerund?: string;
   /** Written as WORD_SCHEMA_VERSION on every write; absent only on legacy documents. */
   schemaVersion?: number;
   createdAt: EpochMs;
@@ -58,6 +63,8 @@ export interface WordInput extends WordPairInput {
   type?: WordType;
   article?: Article;
   plural?: string;
+  conjugations?: Conjugations;
+  gerund?: string;
 }
 
 /**
@@ -70,6 +77,8 @@ export interface WordUpdate {
   type?: WordType | null;
   article?: Article | null;
   plural?: string | null;
+  conjugations?: Conjugations | null;
+  gerund?: string | null;
 }
 
 export type WordStatus = 'new' | 'learning' | 'mastered';

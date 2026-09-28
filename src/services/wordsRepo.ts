@@ -11,9 +11,11 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import type { FieldValue, Unsubscribe } from 'firebase/firestore';
+import type { Conjugations } from '../constants/conjugation';
 import { WORD_SCHEMA_VERSION } from '../constants/word';
 import { db } from '../firebase/firebase';
 import { dailyStatDocRaw, wordDoc, wordsCol } from '../firebase/paths';
+import { cleanConjugations, cleanGerund } from '../lib/conjugations';
 import { applyReview, initialSrsState, outcomeToQuality, pickSrs } from '../lib/srs';
 import { dayKey } from '../lib/dates';
 import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordUpdate } from '../types';
@@ -24,12 +26,16 @@ const BATCH_SIZE = 400;
 /** Trimmed input; absent or empty optional fields are left out entirely (never undefined). */
 function cleanInput(input: WordInput): WordInput {
   const plural = input.plural?.trim();
+  const conjugations = cleanConjugations(input.conjugations);
+  const gerund = cleanGerund(input.gerund);
   return {
     spanish: input.spanish.trim(),
     english: input.english.trim(),
     ...(input.type && { type: input.type }),
     ...(input.article && { article: input.article }),
     ...(plural && { plural }),
+    ...(conjugations && { conjugations }),
+    ...(gerund && { gerund }),
   };
 }
 
@@ -67,7 +73,7 @@ export async function addWord(uid: string, input: WordInput): Promise<void> {
 }
 
 export async function updateWord(uid: string, wordId: string, changes: WordUpdate): Promise<void> {
-  const data: Record<string, string | number | FieldValue> = {
+  const data: Record<string, string | number | FieldValue | Conjugations> = {
     updatedAt: Date.now(),
     schemaVersion: WORD_SCHEMA_VERSION,
   };
@@ -77,9 +83,13 @@ export async function updateWord(uid: string, wordId: string, changes: WordUpdat
     data.spanish = spanish;
   }
   if (changes.english !== undefined) data.english = changes.english.trim();
-  for (const key of ['type', 'article', 'plural'] as const) {
+  for (const key of ['type', 'article', 'plural', 'gerund'] as const) {
     const value = optionalField(changes[key]);
     if (value !== undefined) data[key] = value;
+  }
+  // A map value replaces the whole stored map, so removed forms disappear too.
+  if (changes.conjugations !== undefined) {
+    data.conjugations = cleanConjugations(changes.conjugations) ?? deleteField();
   }
   await updateDoc(wordDoc(uid, wordId), data);
 }
