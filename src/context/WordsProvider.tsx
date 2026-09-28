@@ -46,7 +46,7 @@ export function WordsProvider({ uid, children }: { uid: string; children: ReactN
       updateWord: (id, changes) => repo.updateWord(uid, id, changes),
       deleteWord: (id) => repo.deleteWord(uid, id),
       resetProgress: (id) => repo.resetWordProgress(uid, id),
-      importPairs: (pairs) => repo.importWords(uid, pairs),
+      importWords: (inputs) => repo.importWords(uid, inputs),
       recordReview: (word, outcome, mode) => repo.recordReview(uid, word, outcome, mode),
     }),
     [uid, words, practiceWords, draftWords, loading, error],

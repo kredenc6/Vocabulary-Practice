@@ -1,5 +1,5 @@
 import { createContext, useContext } from 'react';
-import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordPairInput, WordUpdate } from '../types';
+import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordUpdate } from '../types';
 
 export interface WordsContextValue {
   /** All words of the signed-in user (drafts included), newest first. Kept in sync in real time. */
@@ -17,7 +17,7 @@ export interface WordsContextValue {
   updateWord: (id: string, changes: WordUpdate) => Promise<void>;
   deleteWord: (id: string) => Promise<void>;
   resetProgress: (id: string) => Promise<void>;
-  importPairs: (pairs: WordPairInput[]) => Promise<number>;
+  importWords: (inputs: WordInput[]) => Promise<number>;
   recordReview: (word: VocabWord, outcome: AnswerOutcome, mode: PracticeMode) => SrsState;
 }
 

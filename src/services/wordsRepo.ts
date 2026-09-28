@@ -16,7 +16,7 @@ import { db } from '../firebase/firebase';
 import { dailyStatDocRaw, wordDoc, wordsCol } from '../firebase/paths';
 import { applyReview, initialSrsState, outcomeToQuality, pickSrs } from '../lib/srs';
 import { dayKey } from '../lib/dates';
-import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordPairInput, WordUpdate } from '../types';
+import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordUpdate } from '../types';
 
 /** Firestore allows at most 500 writes per batch. */
 const BATCH_SIZE = 400;
@@ -88,19 +88,22 @@ export async function deleteWord(uid: string, wordId: string): Promise<void> {
   await deleteDoc(wordDoc(uid, wordId));
 }
 
-/** Import many pairs using batched writes. Returns the number of words added. */
-export async function importWords(uid: string, pairs: WordPairInput[]): Promise<number> {
+/**
+ * Import many words using batched writes, each with a fresh review schedule.
+ * Returns the number of words added. Inputs must already be validated (see lib/csv.ts).
+ */
+export async function importWords(uid: string, inputs: WordInput[]): Promise<number> {
   const now = Date.now();
-  for (let start = 0; start < pairs.length; start += BATCH_SIZE) {
+  for (let start = 0; start < inputs.length; start += BATCH_SIZE) {
     const batch = writeBatch(db);
-    pairs.slice(start, start + BATCH_SIZE).forEach((pair, i) => {
+    inputs.slice(start, start + BATCH_SIZE).forEach((input, i) => {
       // Offset createdAt so imported words keep the file's order.
-      const word = newWord(uid, pair, now + start + i);
+      const word = newWord(uid, input, now + start + i);
       batch.set(wordDoc(uid, word.id), word);
     });
     await batch.commit();
   }
-  return pairs.length;
+  return inputs.length;
 }
 
 /** Reset the learning progress of a word to "new". */

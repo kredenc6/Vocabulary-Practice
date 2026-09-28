@@ -8,7 +8,7 @@ export interface AnswerCheck {
 
 const SPANISH_ARTICLE = /^(el|la|los|las|un|una|unos|unas)\s+/;
 const ENGLISH_LEADING = /^(to|the|a|an)\s+/;
-const COMBINING_MARKS = /[̀-ͯ]/g;
+const COMBINING_MARKS = /[\u0300-\u036f]/g;
 
 /** Lowercase, trim, drop punctuation and parenthesised hints, collapse spaces. */
 export function normalize(text: string): string {

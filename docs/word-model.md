@@ -63,6 +63,23 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
   - It's never graded, never a multiple-choice option, and never affects SRS or statistics.
 - **Type** is never displayed in practice.
 
+## CSV import and export
+
+Code: [`src/lib/csv.ts`](../src/lib/csv.ts) and [`CsvImport.tsx`](../src/components/vocabulary/CsvImport.tsx).
+
+- **Format:** UTF-8, fixed delimiter `|`, and a required header row whose names are the stored field names: `spanish`, `english` (required), `type`, `article`, `plural` (optional). Headers match after trimming, case-insensitively, in any order. A UTF-8 BOM is stripped.
+- **Reading:** the file is decoded as UTF-8 (`file.text()`). If it contains U+FFFD, it isn't UTF-8 and nothing is imported.
+- **Header errors** (a missing required column, a duplicated column name) stop the import before anything is written. Unknown columns are ignored with a warning.
+- **Rows:**
+  - An empty `spanish`, or a value longer than 300 characters, is a row error and the row is skipped.
+  - Every other row is stored. It's a draft when `isComplete()` is false.
+  - `type` and `article` are case-insensitive; `article` also accepts "not used". An invalid value counts as missing and is reported.
+  - `article` and `plural` are ignored on non-nouns.
+  - Fully blank lines are skipped silently.
+- **Duplicates:** matched on `spanish` only (trimmed, case-insensitive), against existing words and earlier rows. The first occurrence wins.
+- **Planning then writing:** `planCsvImport()` is pure and builds the whole plan in memory. The UI shows it as a preview, and only "Import" writes, via `importWords` (batches of 400, fresh review schedule). The same report is shown afterwards.
+- **Export** writes the same format, so an exported file can be imported again.
+
 ## Constants
 
 Defined as `as const` arrays with derived union types (no enums). The UI uses the label maps.

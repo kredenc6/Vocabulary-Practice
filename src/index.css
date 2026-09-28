@@ -887,6 +887,46 @@ kbd, .kbd {
 
 .dropzone:hover, .dropzone.drag-over { border-color: var(--accent); background: var(--accent-soft); }
 
+/* CSV import: format popover and report */
+.info-popover { position: relative; display: inline-flex; }
+
+.popover {
+  position: absolute;
+  top: calc(100% + 6px);
+  right: 0;
+  z-index: 20;
+  width: min(25rem, calc(100vw - 3rem));
+  padding: 0.9rem 1rem;
+  border-radius: var(--radius-sm);
+  border: 1px solid var(--border-strong);
+  background: var(--surface);
+  box-shadow: var(--shadow-lg);
+  font-size: 0.85rem;
+  color: var(--text-2);
+  display: flex;
+  flex-direction: column;
+  gap: 0.55rem;
+}
+
+.popover strong { color: var(--text); }
+
+.code-block {
+  margin: 0;
+  padding: 0.5rem 0.65rem;
+  border-radius: 7px;
+  background: var(--surface-2);
+  color: var(--text);
+  font-family: ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.8rem;
+  line-height: 1.5;
+  overflow-x: auto;
+  white-space: pre;
+}
+
+.import-report { display: flex; flex-direction: column; gap: 0.5rem; font-size: 0.9rem; }
+.import-report summary { cursor: pointer; font-weight: 600; }
+.import-report ul { margin: 0.35rem 0 0; padding-left: 1.2rem; max-height: 11rem; overflow-y: auto; font-size: 0.85rem; color: var(--text-2); }
+
 .preview-table { width: 100%; border-collapse: collapse; font-size: 0.88rem; }
 .preview-table th, .preview-table td { text-align: left; padding: 0.35rem 0.5rem; border-bottom: 1px solid var(--border); }
 .preview-table th { color: var(--muted); font-weight: 600; font-size: 0.75rem; text-transform: uppercase; }
