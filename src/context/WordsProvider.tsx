@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from 'react';
 import type { ReactNode } from 'react';
 import * as repo from '../services/wordsRepo';
-import { isComplete } from '../lib/wordValidation';
+import { isComplete, isDraft } from '../lib/wordValidation';
 import type { VocabWord } from '../types';
 import { WordsContext } from './words';
 import type { WordsContextValue } from './words';
@@ -33,11 +33,13 @@ export function WordsProvider({ uid, children }: { uid: string; children: ReactN
 
   // The single place where drafts are filtered out of practice and statistics.
   const practiceWords = useMemo(() => words.filter(isComplete), [words]);
+  const draftWords = useMemo(() => words.filter(isDraft), [words]);
 
   const value = useMemo<WordsContextValue>(
     () => ({
       words,
       practiceWords,
+      draftWords,
       loading,
       error,
       addWord: (input) => repo.addWord(uid, input),
@@ -47,7 +49,7 @@ export function WordsProvider({ uid, children }: { uid: string; children: ReactN
       importPairs: (pairs) => repo.importWords(uid, pairs),
       recordReview: (word, outcome, mode) => repo.recordReview(uid, word, outcome, mode),
     }),
-    [uid, words, practiceWords, loading, error],
+    [uid, words, practiceWords, draftWords, loading, error],
   );
 
   return <WordsContext.Provider value={value}>{children}</WordsContext.Provider>;

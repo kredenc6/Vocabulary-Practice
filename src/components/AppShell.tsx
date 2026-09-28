@@ -3,6 +3,7 @@ import { useAuth, useUser } from '../context/auth';
 import { useWords } from '../context/words';
 import { useHashTab } from '../hooks/useHashTab';
 import { isDue } from '../lib/srs';
+import { DraftsPage } from '../pages/DraftsPage';
 import { PracticePage } from '../pages/PracticePage';
 import { VocabularyPage } from '../pages/VocabularyPage';
 import { Spinner } from './Spinner';
@@ -10,12 +11,13 @@ import { Spinner } from './Spinner';
 // Statistics (and the charting library) load only when the tab is opened.
 const StatsPage = lazy(() => import('../pages/StatsPage').then((m) => ({ default: m.StatsPage })));
 
-const TABS = ['practice', 'vocabulary', 'stats'] as const;
+const TABS = ['practice', 'vocabulary', 'drafts', 'stats'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABELS: Record<Tab, string> = {
   practice: 'Practice',
   vocabulary: 'Vocabulary',
+  drafts: 'Drafts',
   stats: 'Statistics',
 };
 
@@ -43,7 +45,8 @@ function UserMenu() {
 
 export function AppShell() {
   const [tab, setTab] = useHashTab(TABS, 'practice');
-  const { practiceWords, loading, error } = useWords();
+  const { practiceWords, draftWords, loading, error } = useWords();
+  const draftCount = draftWords.length;
   const dueCount = useMemo(() => {
     const now = Date.now();
     return practiceWords.filter((w) => isDue(w, now)).length;
@@ -74,6 +77,11 @@ export function AppShell() {
                     {dueCount > 99 ? '99+' : dueCount}
                   </span>
                 )}
+                {t === 'drafts' && draftCount > 0 && (
+                  <span className="nav-count nav-count-muted" aria-label={`${draftCount} drafts`}>
+                    {draftCount > 99 ? '99+' : draftCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -97,7 +105,8 @@ export function AppShell() {
             <div hidden={tab !== 'practice'}>
               <PracticePage active={tab === 'practice'} onGoToVocabulary={() => setTab('vocabulary')} />
             </div>
-            {tab === 'vocabulary' && <VocabularyPage />}
+            {tab === 'vocabulary' && <VocabularyPage onGoToDrafts={() => setTab('drafts')} />}
+            {tab === 'drafts' && <DraftsPage onGoToVocabulary={() => setTab('vocabulary')} />}
             {tab === 'stats' && (
               <Suspense fallback={<Spinner label="Loading statistics…" />}>
                 <StatsPage />

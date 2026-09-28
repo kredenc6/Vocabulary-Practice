@@ -20,6 +20,14 @@ export const MANDATORY_FIELD_LABELS: Record<MandatoryField, string> = {
   article: 'article',
 };
 
+/** Short tags for draft lists, e.g. "no type". */
+export const MISSING_FIELD_TAGS: Record<MandatoryField, string> = {
+  spanish: 'no Spanish word',
+  english: 'no translation',
+  type: 'no type',
+  article: 'no article',
+};
+
 /** Mandatory fields that are missing, in a stable order. Empty for complete words. */
 export function getMissingFields(word: WordCompletenessFields): MandatoryField[] {
   const missing: MandatoryField[] = [];

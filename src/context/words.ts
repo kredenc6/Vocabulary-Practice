@@ -9,6 +9,8 @@ export interface WordsContextValue {
    * statistics must use this list – drafts never reach them.
    */
   practiceWords: VocabWord[];
+  /** Drafts only (the complement of practiceWords), newest first. */
+  draftWords: VocabWord[];
   loading: boolean;
   error: string | null;
   addWord: (input: WordInput) => Promise<void>;

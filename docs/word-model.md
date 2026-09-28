@@ -38,7 +38,13 @@ A word is **complete** when all of these hold:
 
 Anything else is a **draft**. The status is always derived with `isComplete` / `isDraft` / `getMissingFields` and is never stored.
 
-Drafts never reach practice or statistics. `WordsContext.practiceWords` is the complete-words list and is the only list practice and statistics code may use. `WordsContext.words` holds everything, drafts included; it's used for the vocabulary list, duplicate checks and CSV export.
+Drafts never reach practice or statistics. `WordsContext` provides three derived lists:
+
+- `practiceWords`: complete words only. It's the only list practice and statistics code may use, and the main Vocabulary list shows it.
+- `draftWords`: drafts only. The Drafts tab shows it, and its size is the nav badge.
+- `words`: everything. It's used for duplicate checks and CSV export.
+
+Saving a word through the shared form moves it between Vocabulary and Drafts automatically, because the status is derived. Draft rows show `MISSING_FIELD_TAGS` (e.g. "no type") from `getMissingFields`.
 
 ## Add/edit form
 

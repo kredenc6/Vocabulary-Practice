@@ -21,8 +21,14 @@ const SORTERS: Record<SortKey, (a: VocabWord, b: VocabWord) => number> = {
 
 const searchable = (text: string) => stripAccents(normalize(text));
 
-export function VocabularyPage() {
-  const { words } = useWords();
+interface Props {
+  onGoToDrafts: () => void;
+}
+
+export function VocabularyPage({ onGoToDrafts }: Props) {
+  // The main list shows complete words only; drafts live in the Drafts tab.
+  const { practiceWords: words, draftWords } = useWords();
+  const draftCount = draftWords.length;
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
   const [sort, setSort] = useState<SortKey>('newest');
@@ -46,7 +52,16 @@ export function VocabularyPage() {
         <div>
           <h1>Vocabulary</h1>
           <p>
-            {words.length} word{words.length === 1 ? '' : 's'} · synced to your account
+            {words.length} word{words.length === 1 ? '' : 's'}
+            {draftCount > 0 && (
+              <>
+                {' · '}
+                <button type="button" className="link-btn" onClick={onGoToDrafts}>
+                  {draftCount} draft{draftCount === 1 ? '' : 's'}
+                </button>
+              </>
+            )}
+            {' · synced to your account'}
           </p>
         </div>
       </div>
@@ -98,7 +113,21 @@ export function VocabularyPage() {
 
         {filtered.length === 0 ? (
           <div className="empty-state">
-            <p>{words.length === 0 ? 'No words yet – add your first word above.' : 'No words match your filters.'}</p>
+            {words.length > 0 ? (
+              <p>No words match your filters.</p>
+            ) : draftCount > 0 ? (
+              <>
+                <p>
+                  No complete words yet. {draftCount} draft{draftCount === 1 ? ' is' : 's are'} waiting to be
+                  completed.
+                </p>
+                <button type="button" className="btn btn-secondary" onClick={onGoToDrafts}>
+                  Open drafts
+                </button>
+              </>
+            ) : (
+              <p>No words yet – add your first word above.</p>
+            )}
           </div>
         ) : (
           <div className="word-list">
