@@ -11,12 +11,13 @@ Words are stored per user at `users/{uid}/words/{wordId}`. The Firestore documen
 
 | Field | Type | Notes |
 | --- | --- | --- |
-| `spanish` | string | **Required, non-empty.** The word *without* its article (`casa`, not `la casa`). |
+| `spanish` | string | **Required, non-empty.** The base form: a noun *without* its article (`casa`, not `la casa`), a verb's infinitive, or an adjective's masculine singular (four-form) / singular (two-form). |
 | `english` | string | Translation. May be `""` while the word is a draft. |
 | `type` | `WordType`? | See [Constants](#constants). Absent = not filled in. |
 | `article` | `Article`? | Absent = not filled in. `not_used` = noun used without an article, which is **not** the same as absent. |
-| `plural` | string? | Plural form without its article, at most 300 characters. |
+| `plural` | string? | Nouns only. Plural form without its article, at most 300 characters. |
 | `conjugations` | `Conjugations`? | Verbs only, grouped: `conjugations[group][tense][person]` or `conjugations[group][form]`, with only non-empty values. The gerund is `conjugations.progressive.gerund`. See [Verb conjugations](#verb-conjugations). |
+| `adjective` | `AdjectiveForms`? | Adjectives only. `{ kind: 'four', feminine?, masculinePlural?, femininePlural? }` or `{ kind: 'two', plural? }`. See [Adjective forms](#adjective-forms). |
 | `schemaVersion` | int | Always written as `WORD_SCHEMA_VERSION` (currently `1`) on every create and update. |
 | `createdAt`, `updatedAt` | int | Epoch milliseconds. |
 | `easeFactor`, `interval`, `repetitions`, `nextReviewDate`, `lastReviewedAt`, `lapses`, `totalReviews`, `correctReviews` | numbers | Spaced-repetition state (SM-2), see [`src/lib/srs.ts`](../src/lib/srs.ts). |
@@ -54,6 +55,24 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
 - **Enabled fields:** article and plural are enabled only when type is `noun`. Changing the type away from noun clears them.
 - **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
 - **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
+
+## Adjective forms
+
+Adjectives are either **four-form** or **two-form**, chosen with a switch in the word form. The config is [`src/constants/adjective.ts`](../src/constants/adjective.ts) (`ADJECTIVE_KINDS`), and the helpers are in [`src/lib/adjective.ts`](../src/lib/adjective.ts).
+
+| Kind | `spanish` holds | Optional forms (stored keys) | Example |
+| --- | --- | --- | --- |
+| `four` | masculine singular | `feminine`, `masculinePlural`, `femininePlural` | bonito · bonita · bonitos · bonitas |
+| `two` | singular | `plural` | verde · verdes |
+
+- **Stored shape:** `adjective = { kind, ...forms }`. The kind is always stored for adjectives, so it records the switch even with no forms filled in. Forms are stored only when non-empty, and only those of the chosen kind.
+- **Defaults and completeness:** an adjective without an `adjective` field (e.g. saved before this existed) opens as four-form. The forms and the kind don't affect completeness.
+- **Cleaning:** `cleanAdjective()` is used by the form, the repository (before writing) and the converter (when reading). It keeps the valid kind plus that kind's trimmed forms of at most 300 characters. Updates replace the whole `adjective` map; an empty result is removed with `deleteField()`.
+- **Editing:** when type is `adjective`, the form shows the "Four forms / Two forms" switch and that kind's inputs. The Spanish field's label follows the kind ("masculine singular" / "singular").
+  - Values typed for the other kind stay in the form while editing but aren't saved.
+  - If the type is changed away from adjective, the forms are removed on save.
+- **Adding a kind or form:** add it to `ADJECTIVE_KINDS`. The types, form inputs, display and cleaning follow. Also update `isValidAdjective()` in `firestore.rules`.
+- CSV import/export doesn't include adjective forms (yet).
 
 ## Verb conjugations
 
@@ -114,7 +133,7 @@ When type is `verb`, the shared form shows a "Conjugations…" button with a cou
 
 - **`formatSpanish(word)`** ([`src/lib/wordDisplay.ts`](../src/lib/wordDisplay.ts)) returns `article + " " + spanish`, or just `spanish` when the article is absent or `not_used`. Examples: "un hombre", "una maleta", "México". Use it everywhere the Spanish word is shown to the learner: practice prompts, flashcards, multiple-choice options, feedback, lists and messages.
 - **Typed English → Spanish:** the expected answer is `formatSpanish(word)`, so the article belongs in the answer. The comparison logic in [`answerCheck.ts`](../src/lib/answerCheck.ts) is unchanged: a missing or wrong article is graded "close enough", with a hint.
-- **Plural:** shown as small muted text ("pl. hombres") by the `SpanishWord` / `WordSide` components ([`src/components/SpanishWord.tsx`](../src/components/SpanishWord.tsx)), and only where the Spanish word itself is visible.
+- **Plural and adjective forms:** shown as small muted text ("pl. hombres"; "f. bonita m. pl. bonitos f. pl. bonitas"; "pl. verdes") by the `SpanishWord` / `WordSide` components ([`src/components/SpanishWord.tsx`](../src/components/SpanishWord.tsx)), and only where the Spanish word itself is visible.
   - It never appears in an English → Spanish prompt before the answer is revealed.
   - It's never graded, never a multiple-choice option, and never affects SRS or statistics.
 - **Type** is never displayed in practice.

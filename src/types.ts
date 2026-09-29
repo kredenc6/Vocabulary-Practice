@@ -1,3 +1,4 @@
+import type { AdjectiveForms } from './constants/adjective';
 import type { Conjugations } from './constants/conjugation';
 import type { Article, WordType } from './constants/word';
 
@@ -43,6 +44,12 @@ export interface VocabWordData extends SrsState {
    * Only non-empty values are stored.
    */
   conjugations?: Conjugations;
+  /**
+   * Adjectives only: the four-form / two-form choice plus the optional other forms,
+   * e.g. { kind: 'four', feminine: 'bonita' } or { kind: 'two', plural: 'verdes' }.
+   * `spanish` holds the masculine singular (four-form) or the singular (two-form).
+   */
+  adjective?: AdjectiveForms;
   /** Written as WORD_SCHEMA_VERSION on every write; absent only on legacy documents. */
   schemaVersion?: number;
   createdAt: EpochMs;
@@ -66,6 +73,7 @@ export interface WordInput extends WordPairInput {
   article?: Article;
   plural?: string;
   conjugations?: Conjugations;
+  adjective?: AdjectiveForms;
 }
 
 /**
@@ -79,6 +87,7 @@ export interface WordUpdate {
   article?: Article | null;
   plural?: string | null;
   conjugations?: Conjugations | null;
+  adjective?: AdjectiveForms | null;
 }
 
 export type WordStatus = 'new' | 'learning' | 'mastered';

@@ -1,12 +1,15 @@
+import { Fragment } from 'react';
+import { adjectiveFormList } from '../lib/adjective';
 import { formatSpanish } from '../lib/wordDisplay';
 import type { VocabWordData } from '../types';
 
-type DisplayWord = Pick<VocabWordData, 'spanish' | 'article' | 'plural' | 'english'>;
+type DisplayWord = Pick<VocabWordData, 'spanish' | 'article' | 'plural' | 'english' | 'adjective'>;
 
 /**
- * The formatted Spanish word ("un hombre") with its plural as small muted text.
- * Only use it where the Spanish word itself may be visible; the plural is
- * display-only (never graded, never an answer option).
+ * The formatted Spanish word ("un hombre") with its other forms as small muted
+ * text: the noun plural ("pl. hombres") or the adjective forms ("f. bonita",
+ * "m. pl. bonitos", …). Only use it where the Spanish word itself may be visible;
+ * these forms are display-only (never graded, never an answer option).
  */
 export function SpanishWord({ word, showPlural = true }: { word: DisplayWord; showPlural?: boolean }) {
   return (
@@ -20,6 +23,15 @@ export function SpanishWord({ word, showPlural = true }: { word: DisplayWord; sh
           </span>
         </>
       )}
+      {showPlural &&
+        adjectiveFormList(word.adjective).map((form) => (
+          <Fragment key={form.key}>
+            {' '}
+            <span className="plural" lang="es">
+              {form.short} {form.value}
+            </span>
+          </Fragment>
+        ))}
     </>
   );
 }

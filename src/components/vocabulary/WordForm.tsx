@@ -1,8 +1,10 @@
-import { useState } from 'react';
+import { useId, useState } from 'react';
 import type { FormEvent, ReactNode, Ref } from 'react';
+import { ADJECTIVE_KINDS, adjectiveKindConfig } from '../../constants/adjective';
+import type { AdjectiveFormKey } from '../../constants/adjective';
 import { ARTICLES, ARTICLE_LABELS, WORD_TYPES, WORD_TYPE_LABELS, isArticle, isWordType } from '../../constants/word';
 import { countForms } from '../../lib/conjugations';
-import { formCompletenessFields, nounFieldsApply, verbFieldsApply, withType } from '../../lib/wordForm';
+import { adjectiveFieldsApply, formCompletenessFields, nounFieldsApply, verbFieldsApply, withType } from '../../lib/wordForm';
 import type { WordFormValues } from '../../lib/wordForm';
 import { MANDATORY_FIELD_LABELS, getMissingFields } from '../../lib/wordValidation';
 import { ConjugationDialog } from './ConjugationDialog';
@@ -24,6 +26,9 @@ interface Props {
 export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef, autoFocus, children }: Props) {
   const isNoun = nounFieldsApply(values.type);
   const isVerb = verbFieldsApply(values.type);
+  const isAdjective = adjectiveFieldsApply(values.type);
+  const adjectiveKind = adjectiveKindConfig(values.adjective.kind);
+  const adjectiveRadioName = useId();
   const [conjugationsOpen, setConjugationsOpen] = useState(false);
   const formCount = countForms(values.conjugations);
   const missing = getMissingFields(formCompletenessFields(values));
@@ -41,13 +46,15 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
     <form className="word-form" onSubmit={handleSubmit}>
       <div className="word-form-grid">
         <label className="field span-3">
-          <span className="field-label">Spanish (without article)</span>
+          <span className="field-label">
+            {isAdjective ? `Spanish (${adjectiveKind.baseLabel})` : 'Spanish (without article)'}
+          </span>
           <input
             ref={spanishRef}
             className="input"
             value={values.spanish}
             onChange={(e) => set({ spanish: e.target.value })}
-            placeholder="manzana"
+            placeholder={isAdjective ? adjectiveKind.basePlaceholder : 'manzana'}
             lang="es"
             maxLength={300}
             autoFocus={autoFocus}
@@ -109,6 +116,46 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
           />
         </label>
       </div>
+
+      {/* Adjectives only: four-form / two-form switch and the optional other forms. */}
+      {isAdjective && (
+        <fieldset className="word-form-adjective">
+          <legend className="field-label">Adjective forms</legend>
+          <div className="option-group" role="radiogroup" aria-label="Adjective forms">
+            {ADJECTIVE_KINDS.map((kind) => (
+              <label key={kind.key} className="option">
+                <input
+                  type="radio"
+                  name={adjectiveRadioName}
+                  checked={values.adjective.kind === kind.key}
+                  onChange={() => set({ adjective: { ...values.adjective, kind: kind.key } })}
+                />
+                <span>
+                  {kind.label}
+                  <span className="option-desc" lang="es">
+                    {kind.example}
+                  </span>
+                </span>
+              </label>
+            ))}
+          </div>
+          <div className="word-form-grid">
+            {adjectiveKind.forms.map((form) => (
+              <label key={form.key} className="field span-2">
+                <span className="field-label">{form.label} (optional)</span>
+                <input
+                  className="input"
+                  value={values.adjective[form.key as AdjectiveFormKey]}
+                  onChange={(e) => set({ adjective: { ...values.adjective, [form.key]: e.target.value } })}
+                  placeholder={form.placeholder}
+                  lang="es"
+                  maxLength={300}
+                />
+              </label>
+            ))}
+          </div>
+        </fieldset>
+      )}
 
       {/* Verbs only. Conjugations don't affect completeness and aren't used in practice (yet). */}
       {isVerb && (

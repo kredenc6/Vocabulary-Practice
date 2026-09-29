@@ -11,10 +11,12 @@ import {
   writeBatch,
 } from 'firebase/firestore';
 import type { FieldValue, Unsubscribe } from 'firebase/firestore';
+import type { AdjectiveForms } from '../constants/adjective';
 import type { Conjugations } from '../constants/conjugation';
 import { WORD_SCHEMA_VERSION } from '../constants/word';
 import { db } from '../firebase/firebase';
 import { dailyStatDocRaw, wordDoc, wordsCol } from '../firebase/paths';
+import { cleanAdjective } from '../lib/adjective';
 import { cleanConjugations } from '../lib/conjugations';
 import { applyReview, initialSrsState, outcomeToQuality, pickSrs } from '../lib/srs';
 import { dayKey } from '../lib/dates';
@@ -27,6 +29,7 @@ const BATCH_SIZE = 400;
 function cleanInput(input: WordInput): WordInput {
   const plural = input.plural?.trim();
   const conjugations = cleanConjugations(input.conjugations);
+  const adjective = cleanAdjective(input.adjective);
   return {
     spanish: input.spanish.trim(),
     english: input.english.trim(),
@@ -34,6 +37,7 @@ function cleanInput(input: WordInput): WordInput {
     ...(input.article && { article: input.article }),
     ...(plural && { plural }),
     ...(conjugations && { conjugations }),
+    ...(adjective && { adjective }),
   };
 }
 
@@ -71,7 +75,7 @@ export async function addWord(uid: string, input: WordInput): Promise<void> {
 }
 
 export async function updateWord(uid: string, wordId: string, changes: WordUpdate): Promise<void> {
-  const data: Record<string, string | number | FieldValue | Conjugations> = {
+  const data: Record<string, string | number | FieldValue | Conjugations | AdjectiveForms> = {
     updatedAt: Date.now(),
     schemaVersion: WORD_SCHEMA_VERSION,
   };
@@ -88,6 +92,9 @@ export async function updateWord(uid: string, wordId: string, changes: WordUpdat
   // A map value replaces the whole stored map, so removed forms disappear too.
   if (changes.conjugations !== undefined) {
     data.conjugations = cleanConjugations(changes.conjugations) ?? deleteField();
+  }
+  if (changes.adjective !== undefined) {
+    data.adjective = cleanAdjective(changes.adjective) ?? deleteField();
   }
   await updateDoc(wordDoc(uid, wordId), data);
 }

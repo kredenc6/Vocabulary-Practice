@@ -1,6 +1,7 @@
 import { useMemo, useState } from 'react';
 import { useWords } from '../context/words';
 import { normalize, stripAccents } from '../lib/answerCheck';
+import { adjectiveFormList } from '../lib/adjective';
 import { formatSpanish } from '../lib/wordDisplay';
 import { STATUS_LABELS, isDue, wordStatus } from '../lib/srs';
 import type { VocabWord, WordStatus } from '../types';
@@ -48,6 +49,7 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
         !q ||
         searchable(formatSpanish(w)).includes(q) ||
         searchable(w.plural ?? '').includes(q) ||
+        adjectiveFormList(w.adjective).some((f) => searchable(f.value).includes(q)) ||
         searchable(w.english).includes(q)
       );
     });

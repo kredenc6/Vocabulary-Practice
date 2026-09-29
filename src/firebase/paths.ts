@@ -8,6 +8,7 @@ import type {
 } from 'firebase/firestore';
 import type { DailyStat, PracticeSessionRecord, VocabWord } from '../types';
 import { isArticle, isWordType } from '../constants/word';
+import { cleanAdjective } from '../lib/adjective';
 import { cleanConjugations } from '../lib/conjugations';
 import { initialSrsState } from '../lib/srs';
 import { db } from './firebase';
@@ -37,6 +38,7 @@ const wordConverter: FirestoreDataConverter<VocabWord> = {
     const createdAt = num(d.createdAt, 0);
     const defaults = initialSrsState(createdAt);
     const conjugations = cleanConjugations(d.conjugations);
+    const adjective = cleanAdjective(d.adjective);
     return {
       id: snapshot.id,
       spanish: String(d.spanish ?? ''),
@@ -55,6 +57,7 @@ const wordConverter: FirestoreDataConverter<VocabWord> = {
       ...(isArticle(d.article) && { article: d.article }),
       ...(typeof d.plural === 'string' && d.plural.trim() && { plural: d.plural }),
       ...(conjugations && { conjugations }),
+      ...(adjective && { adjective }),
       ...(typeof d.schemaVersion === 'number' && { schemaVersion: d.schemaVersion }),
     };
   },

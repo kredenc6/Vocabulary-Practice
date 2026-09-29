@@ -67,6 +67,21 @@ service cloud.firestore {
         && isValid_progressive(c.get('progressive', {}));
     }
 
+    // Adjective forms – mirrors ADJECTIVE_KINDS in src/constants/adjective.ts.
+    // { kind: 'four', feminine?, masculinePlural?, femininePlural? } or { kind: 'two', plural? }
+    function isValidAdjective(a) {
+      return a is map && (
+        (a.get('kind', '') == 'four'
+          && a.keys().hasOnly(['kind', 'feminine', 'masculinePlural', 'femininePlural'])
+          && isForm(a.get('feminine', ''))
+          && isForm(a.get('masculinePlural', ''))
+          && isForm(a.get('femininePlural', '')))
+        || (a.get('kind', '') == 'two'
+          && a.keys().hasOnly(['kind', 'plural'])
+          && isForm(a.get('plural', '')))
+      );
+    }
+
     // Optional fields may be absent ("not filled in") but must be valid when present.
     function isValidWord(data) {
       return isShortString(data.spanish, 300)
@@ -75,6 +90,7 @@ service cloud.firestore {
         && (!('article' in data) || data.article in articles())
         && (!('plural' in data) || (data.plural is string && data.plural.size() <= 300))
         && (!('conjugations' in data) || isValidConjugations(data.conjugations))
+        && (!('adjective' in data) || isValidAdjective(data.adjective))
         && data.schemaVersion is int
         && data.easeFactor is number
         && data.interval is number
