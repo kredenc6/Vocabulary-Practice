@@ -114,7 +114,7 @@ The `Conjugations` TypeScript type is derived from the config, so `word.conjugat
 To add a group (e.g. subjunctive with `present`/`imperfect`, or perfect with a `participle` form):
 
 1. Add one entry to `CONJUGATION_GROUPS`. The types, the editor (group switcher, tense tabs, rows), counting and cleaning all follow automatically.
-2. In `firestore.rules`, add the group key to the `hasOnly()` list in `isValidConjugations()`, plus one `isValid_<group>()` function. Rules can't loop, so each group's tenses or forms are listed explicitly; copy an existing function.
+2. In `firestore.rules`, add the group key to the `hasOnly()` list in `isValidConjugations()`, plus one `isValid_<group>()` function. Rules can't loop, so each group's tenses or forms are listed explicitly; copy an existing function. The rules check only the keys (group / tense / person), not each person's value: validating every value exceeds Firestore's limit of 1,000 evaluated expressions per request and makes every write with conjugations fail. Keep new checks cheap for the same reason, and publish the rules after changing them.
 
 Group keys keep tense names from colliding: `subjunctive.present` is distinct from `indicative.present`.
 
@@ -132,6 +132,7 @@ When type is `verb`, the shared form shows a "Conjugations (optional)" field nex
 
 - **Done** applies the changes to the form; they're saved with the word. **Cancel** or Escape discards them.
 - If the type is changed away from verb, the conjugations stay in the form while editing but are removed on save.
+- **Paste table…** (groups with `tablePaste: true` in the config – currently Indicative) fills the whole group from a copied conjugation table: the tense names first (any of the group's tenses, in any order), then each person followed by one form per tense. Cells may be on separate lines or tab-separated; person names are matched leniently ("tu" = "tú", "él/ella/Ud." / "usted" = él). The text is checked live – what was found, how many filled forms would be replaced, or what's wrong – and **Fill forms** writes it into the dialog (forms missing from the table are kept). Parsing is `parseConjugationTable` in [`src/lib/conjugations.ts`](../src/lib/conjugations.ts).
 
 ## Display and grading
 

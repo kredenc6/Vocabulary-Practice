@@ -40,6 +40,8 @@ export interface PersonsGroupConfig {
   excludedPersons?: readonly Person[];
   /** Group-specific person labels, overriding PERSON_LABELS. */
   personLabels?: Partial<Record<Person, string>>;
+  /** Offer filling the whole group from a pasted table (see parseConjugationTable). */
+  tablePaste?: boolean;
   tenses: readonly TenseConfig[];
 }
 
@@ -65,6 +67,7 @@ export const CONJUGATION_GROUPS = [
     kind: 'persons',
     key: 'indicative',
     label: 'Indicative',
+    tablePaste: true,
     tenses: [
       { key: 'present', label: 'Present' },
       { key: 'preterite', label: 'Preterite' },

@@ -23,21 +23,21 @@ service cloud.firestore {
       return ['un', 'una', 'el', 'la', 'not_used'];
     }
 
-    // Conjugations – mirrors CONJUGATION_GROUPS in src/constants/conjugation.ts.
-    // Shape: conjugations[group][tense][person] (persons groups) or conjugations[group][form].
-    // Adding a group: add its key to the hasOnly() list below plus one isValid_<group>() function.
     function isForm(value) {
       return value is string && value.size() <= 300;
     }
 
+    // Conjugations – mirrors CONJUGATION_GROUPS in src/constants/conjugation.ts.
+    // Shape: conjugations[group][tense][person] (persons groups) or conjugations[group][form].
+    // Adding a group: add its key to the hasOnly() list below plus one isValid_<group>() function.
+    //
+    // Only the structure (group / tense / person keys) is checked, not every person's value:
+    // checking all 42 person forms on each write exceeds Firestore's limit of 1,000
+    // evaluated expressions per request, which denies the write. The app trims and
+    // length-limits every form before writing, and cleanConjugations() ignores malformed
+    // values when reading.
     function isValidTense(m) {
-      return m is map && m.keys().hasOnly(['yo', 'tu', 'el', 'nosotros', 'vosotros', 'ellos'])
-        && isForm(m.get('yo', ''))
-        && isForm(m.get('tu', ''))
-        && isForm(m.get('el', ''))
-        && isForm(m.get('nosotros', ''))
-        && isForm(m.get('vosotros', ''))
-        && isForm(m.get('ellos', ''));
+      return m is map && m.keys().hasOnly(['yo', 'tu', 'el', 'nosotros', 'vosotros', 'ellos']);
     }
 
     function isValid_indicative(g) {

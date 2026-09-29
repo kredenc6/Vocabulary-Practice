@@ -957,15 +957,19 @@ kbd, .kbd {
 .conj-group:hover { color: var(--text); }
 .conj-group[aria-selected='true'] { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 
-/* Tense tabs wrap instead of scrolling, so every tense (and the selected one) is always visible. */
+/* Tense tabs (and the "Paste table" button on the right). The tabs wrap instead of scrolling,
+   so every tense (and the selected one) is always visible. */
 .conj-tabs {
   display: flex;
-  flex-wrap: wrap;
-  gap: 0.35rem;
+  align-items: flex-start;
+  gap: 0.35rem 0.75rem;
   padding: 0.6rem 1.1rem;
   border-bottom: 1px solid var(--border);
   flex-shrink: 0;
 }
+
+.conj-tab-list { display: flex; flex-wrap: wrap; gap: 0.35rem; min-width: 0; }
+.conj-paste-btn { margin-left: auto; flex-shrink: 0; }
 
 .conj-tab {
   display: inline-flex;
@@ -1000,6 +1004,12 @@ kbd, .kbd {
 
 .conj-body { flex: 1 1 auto; overflow-y: auto; padding: 1rem 1.1rem; display: flex; flex-direction: column; gap: 1rem; }
 .conj-rows { display: flex; flex-direction: column; gap: 0.5rem; }
+
+/* Pasting a conjugation table */
+.conj-paste-input { resize: vertical; min-height: 10rem; font-family: inherit; line-height: 1.4; }
+.conj-paste-ok { color: var(--good-text); }
+.conj-paste-warn { color: var(--warn-text); }
+.conj-paste-error { color: var(--bad-text); }
 
 .conj-row {
   display: grid;

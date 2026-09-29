@@ -5,7 +5,7 @@
  * what gets stored. Everything iterates the config, so new groups need no
  * changes here.
  */
-import { CONJUGATION_GROUPS, PERSONS, personApplies } from '../constants/conjugation';
+import { CONJUGATION_GROUPS, PERSONS, PERSON_LABELS, personApplies, personLabel } from '../constants/conjugation';
 import type { Conjugations, GroupConfig, Person, PersonsGroupConfig } from '../constants/conjugation';
 
 /** Same limit as firestore.rules. */
@@ -103,4 +103,114 @@ export function countGroupForms(c: Conjugations, group: GroupConfig): number {
 /** Filled forms across all groups. */
 export function countForms(c: Conjugations): number {
   return (CONJUGATION_GROUPS as readonly GroupConfig[]).reduce((sum, group) => sum + countGroupForms(c, group), 0);
+}
+
+/** One form found in a pasted table. */
+export interface ParsedForm {
+  tense: string;
+  person: Person;
+  value: string;
+}
+
+export type ParsedTable = { ok: true; tenses: string[]; persons: Person[]; forms: ParsedForm[] } | { ok: false; error: string };
+
+/** Lowercase, without accents and a trailing dot, for lenient matching ("Tú" = "tu", "Ud." = "ud"). */
+function normalizeLabel(text: string): string {
+  return text
+    .normalize('NFD')
+    .replace(/\p{Diacritic}/gu, '')
+    .toLowerCase()
+    .replace(/\.$/, '')
+    .trim();
+}
+
+/** Extra names for persons, besides the parts of their labels (e.g. "él/ella/Ud."). */
+const PERSON_ALIASES: Partial<Record<Person, string[]>> = {
+  el: ['usted'],
+  nosotros: ['nosotras'],
+  vosotros: ['vosotras'],
+  ellos: ['ustedes'],
+};
+
+/** The person a table cell names, e.g. "él/ella/Ud." → el. Matched on the part before the first "/". */
+function matchPerson(cell: string): Person | undefined {
+  const name = normalizeLabel(cell.split('/')[0]);
+  return PERSONS.find((person) => {
+    const names = [...PERSON_LABELS[person].split('/'), ...(PERSON_ALIASES[person] ?? [])];
+    return names.some((n) => normalizeLabel(n) === name);
+  });
+}
+
+/**
+ * Parse a conjugation table copied from a website, e.g.
+ *
+ *   Present  Preterite  …         (tense names: the column order)
+ *   yo                            (a person, then one form per tense)
+ *   trabajo
+ *   trabajé
+ *   …
+ *
+ * Cells may be separated by line breaks or tabs; empty cells are ignored.
+ * Persons may come in any order, and missing ones are simply not filled.
+ */
+export function parseConjugationTable(text: string, group: PersonsGroupConfig): ParsedTable {
+  const cells = text
+    .split(/[\t\r\n]+/)
+    .map((cell) => cell.trim())
+    .filter(Boolean);
+  if (!cells.length) return { ok: false, error: 'Paste a table first.' };
+
+  const tenses: string[] = [];
+  let i = 0;
+  for (; i < cells.length; i++) {
+    const tense = group.tenses.find((t) => normalizeLabel(t.label) === normalizeLabel(cells[i]));
+    if (!tense) break;
+    if (tenses.includes(tense.key)) return { ok: false, error: `The tense “${tense.label}” appears twice.` };
+    tenses.push(tense.key);
+  }
+  if (!tenses.length) {
+    const names = group.tenses.map((t) => t.label).join(', ');
+    return { ok: false, error: `Start with the tense names (${names}) – found “${cells[0]}”.` };
+  }
+
+  const persons: Person[] = [];
+  const forms: ParsedForm[] = [];
+  while (i < cells.length) {
+    const person = matchPerson(cells[i]);
+    if (!person) {
+      const previous = persons[persons.length - 1];
+      const error = previous
+        ? `“${cells[i]}” is not a person (yo, tú, …) – or “${personLabel(group, previous)}” has more than ${tenses.length} ${tenses.length === 1 ? 'form' : 'forms'}.`
+        : `“${cells[i]}” is not a tense or a person (yo, tú, …).`;
+      return { ok: false, error };
+    }
+    const label = personLabel(group, person);
+    if (!personApplies(group, person)) {
+      return { ok: false, error: `“${label}” is not used in the ${group.label.toLowerCase()}.` };
+    }
+    if (persons.includes(person)) return { ok: false, error: `“${label}” appears twice.` };
+    persons.push(person);
+    i++;
+    const values: string[] = [];
+    while (i < cells.length && values.length < tenses.length && !matchPerson(cells[i])) values.push(cells[i++]);
+    if (values.length < tenses.length) {
+      return { ok: false, error: `“${label}” has ${values.length} of ${tenses.length} forms.` };
+    }
+    values.forEach((value, t) => forms.push({ tense: tenses[t], person, value: value.slice(0, MAX_FORM_LENGTH) }));
+  }
+  if (!persons.length) return { ok: false, error: 'No persons (yo, tú, …) found after the tense names.' };
+  return { ok: true, tenses, persons, forms };
+}
+
+/** Parsed forms that would overwrite a different, already filled form. */
+export function countReplacedForms(c: Conjugations, group: string, forms: readonly ParsedForm[]): number {
+  return forms.filter((f) => {
+    const current = getPersonForm(c, group, f.tense, f.person).trim();
+    return current !== '' && current !== f.value;
+  }).length;
+}
+
+/** Write parsed forms into conjugations[group]; forms not in the table are kept. */
+export function applyParsedForms(c: Conjugations, group: string, forms: readonly ParsedForm[]): Conjugations {
+  return forms.reduce((result, f) => setPersonForm(result, group, f.tense, f.person, f.value), c);
 }
