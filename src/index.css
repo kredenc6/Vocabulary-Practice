@@ -393,6 +393,7 @@ select {
 
 .word-form-grid .span-2 { grid-column: span 2; }
 .word-form-grid .span-3 { grid-column: span 3; }
+.word-form-grid .span-4 { grid-column: span 4; }
 
 .word-form-footer {
   display: flex;
@@ -407,7 +408,8 @@ select {
 @media (max-width: 600px) {
   .word-form-grid { grid-template-columns: minmax(0, 1fr); }
   .word-form-grid .span-2,
-  .word-form-grid .span-3 { grid-column: auto; }
+  .word-form-grid .span-3,
+  .word-form-grid .span-4 { grid-column: auto; }
 }
 
 .option-group { display: flex; flex-wrap: wrap; gap: 0.5rem; }
@@ -843,18 +845,42 @@ kbd, .kbd {
   .word-row.editing { display: block; }
 }
 
-/* Adjective forms in the word form */
-.word-form-adjective {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-  border: 0;
+/* Compact neutral segmented control (e.g. adjective four-form / two-form next to Type).
+   As wide as its content (equal-width options); grows to the height of its grid row,
+   so it lines up with the neighbouring inputs. */
+.segmented {
+  flex: 1;
+  align-self: flex-start;
+  display: grid;
+  grid-auto-flow: column;
+  grid-auto-columns: 1fr;
+  max-width: 100%;
+  gap: 0.2rem;
+  padding: 0.2rem;
+  border-radius: var(--radius-sm);
+  background: var(--surface-2);
 }
 
-.word-form-adjective legend { padding: 0; margin-bottom: 0.45rem; }
+.segmented-option {
+  position: relative;
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.3rem 0.6rem;
+  border-radius: 7px;
+  color: var(--text-2);
+  font-size: 0.875rem;
+  font-weight: 500;
+  white-space: nowrap;
+  cursor: pointer;
+  user-select: none;
+}
+
+.segmented-option input { position: absolute; opacity: 0; pointer-events: none; }
+.segmented-option:hover { color: var(--text); }
+.segmented-option:has(input:checked) { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
+.segmented-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 
 /* Verb extras in the word form */
 .word-form-extra { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }

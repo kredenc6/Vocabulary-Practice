@@ -91,6 +91,27 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
             ))}
           </select>
         </label>
+        {/* Adjectives only: four-form / two-form switch, next to Type. */}
+        {isAdjective && (
+          <div className="field span-4">
+            <span id={adjectiveRadioName} className="field-label">
+              Gender
+            </span>
+            <div className="segmented" role="radiogroup" aria-labelledby={adjectiveRadioName}>
+              {ADJECTIVE_KINDS.map((kind) => (
+                <label key={kind.key} className="segmented-option" title={kind.example}>
+                  <input
+                    type="radio"
+                    name={adjectiveRadioName}
+                    checked={values.adjective.kind === kind.key}
+                    onChange={() => set({ adjective: { ...values.adjective, kind: kind.key } })}
+                  />
+                  {kind.label}
+                </label>
+              ))}
+            </div>
+          </div>
+        )}
         {/* Nouns only; switching away from noun clears them (see withType). */}
         {isNoun && (
           <>
@@ -124,44 +145,23 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
         )}
       </div>
 
-      {/* Adjectives only: four-form / two-form switch and the optional other forms. */}
+      {/* Adjectives only: the optional other forms of the selected kind. */}
       {isAdjective && (
-        <fieldset className="word-form-adjective">
-          <legend className="field-label">Adjective forms</legend>
-          <div className="option-group" role="radiogroup" aria-label="Adjective forms">
-            {ADJECTIVE_KINDS.map((kind) => (
-              <label key={kind.key} className="option">
-                <input
-                  type="radio"
-                  name={adjectiveRadioName}
-                  checked={values.adjective.kind === kind.key}
-                  onChange={() => set({ adjective: { ...values.adjective, kind: kind.key } })}
-                />
-                <span>
-                  {kind.label}
-                  <span className="option-desc" lang="es">
-                    {kind.example}
-                  </span>
-                </span>
-              </label>
-            ))}
-          </div>
-          <div className="word-form-grid">
-            {adjectiveKind.forms.map((form) => (
-              <label key={form.key} className="field span-2">
-                <span className="field-label">{form.label} (optional)</span>
-                <input
-                  className="input"
-                  value={values.adjective[form.key as AdjectiveFormKey]}
-                  onChange={(e) => set({ adjective: { ...values.adjective, [form.key]: e.target.value } })}
-                  placeholder={form.placeholder}
-                  lang="es"
-                  maxLength={300}
-                />
-              </label>
-            ))}
-          </div>
-        </fieldset>
+        <div className="word-form-grid">
+          {adjectiveKind.forms.map((form) => (
+            <label key={form.key} className="field span-2">
+              <span className="field-label">{form.label} (optional)</span>
+              <input
+                className="input"
+                value={values.adjective[form.key as AdjectiveFormKey]}
+                onChange={(e) => set({ adjective: { ...values.adjective, [form.key]: e.target.value } })}
+                placeholder={form.placeholder}
+                lang="es"
+                maxLength={300}
+              />
+            </label>
+          ))}
+        </div>
       )}
 
       {/* Verbs only. Conjugations don't affect completeness and aren't used in practice (yet). */}
