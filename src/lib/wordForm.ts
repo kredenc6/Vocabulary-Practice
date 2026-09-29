@@ -75,6 +75,41 @@ export function withType(values: WordFormValues, type: WordType | ''): WordFormV
   return nounFieldsApply(type) ? { ...values, type } : { ...values, type, article: '', plural: '' };
 }
 
+/** An article written before a noun: un/una/el/la, a space, then at least one more character. */
+const LEADING_ARTICLE = /^\s*(un|una|el|la)\s+(?=\S)/i;
+
+/**
+ * "la casa" → { article: 'la', rest: 'casa' }. Matches only once something
+ * follows the article and a space, so "la" or "una " (still being typed) don't.
+ */
+export function splitLeadingArticle(spanish: string): { article: Article; rest: string } | null {
+  const match = LEADING_ARTICLE.exec(spanish);
+  if (!match) return null;
+  return { article: match[1].toLowerCase() as Article, rest: spanish.slice(match[0].length) };
+}
+
+/** An article moved from the Spanish field; `previous` is a different article it replaced. */
+export interface ArticleMove {
+  article: Article;
+  previous?: Article;
+}
+
+/**
+ * Nouns only: move an article written at the start of the Spanish field
+ * ("la casa") to the Article field. The written article wins over a selected
+ * one. Returns null when there's nothing to move.
+ */
+export function moveLeadingArticle(values: WordFormValues): { values: WordFormValues; move: ArticleMove } | null {
+  if (!nounFieldsApply(values.type)) return null;
+  const split = splitLeadingArticle(values.spanish);
+  if (!split) return null;
+  const previous = values.article && values.article !== split.article ? values.article : undefined;
+  return {
+    values: { ...values, spanish: split.rest, article: split.article },
+    move: { article: split.article, ...(previous && { previous }) },
+  };
+}
+
 /** Trimmed values with the fields that don't apply to the chosen type removed. */
 function normalized(values: WordFormValues) {
   const noun = nounFieldsApply(values.type);
