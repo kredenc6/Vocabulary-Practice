@@ -30,6 +30,8 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   const isAdjective = adjectiveFieldsApply(values.type);
   const adjectiveKind = adjectiveKindConfig(values.adjective.kind);
   const adjectiveRadioName = useId();
+  const conjugationsLabelId = useId();
+  const conjugationsButtonId = useId();
   const discardedForms = isAdjective ? discardedAdjectiveForms(values.adjective) : [];
   const discardedKinds = [...new Set(discardedForms.map((entry) => entry.kind.label))].join(' / ');
   const [conjugationsOpen, setConjugationsOpen] = useState(false);
@@ -115,6 +117,28 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
             </div>
           </div>
         )}
+        {/* Verbs only, next to Type. Conjugations don't affect completeness and aren't used in practice (yet). */}
+        {isVerb && (
+          <div className="field span-4">
+            <span id={conjugationsLabelId} className="field-label">
+              Conjugations (optional)
+            </span>
+            <button
+              id={conjugationsButtonId}
+              type="button"
+              className="btn btn-secondary field-btn"
+              aria-labelledby={`${conjugationsLabelId} ${conjugationsButtonId}`}
+              onClick={() => setConjugationsOpen(true)}
+            >
+              Edit…
+              {formCount > 0 && (
+                <span className="count-pill" aria-label={`${formCount} filled`}>
+                  {formCount}
+                </span>
+              )}
+            </button>
+          </div>
+        )}
         {/* Nouns only; switching away from noun clears them (see withType). */}
         {isNoun && (
           <>
@@ -173,20 +197,6 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
         </p>
       )}
 
-      {/* Verbs only. Conjugations don't affect completeness and aren't used in practice (yet). */}
-      {isVerb && (
-        <div className="word-form-extra">
-          <button type="button" className="btn btn-secondary btn-sm" onClick={() => setConjugationsOpen(true)}>
-            Conjugations…
-            {formCount > 0 && (
-              <span className="count-pill" aria-label={`${formCount} filled`}>
-                {formCount}
-              </span>
-            )}
-          </button>
-          <span className="small muted">Optional</span>
-        </div>
-      )}
       {conjugationsOpen && (
         <ConjugationDialog
           infinitive={values.spanish}

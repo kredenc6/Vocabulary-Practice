@@ -882,8 +882,9 @@ kbd, .kbd {
 .segmented-option:has(input:checked) { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .segmented-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 
-/* Verb extras in the word form */
-.word-form-extra { display: flex; align-items: center; gap: 0.6rem; flex-wrap: wrap; }
+/* A button in a form field (e.g. Conjugations next to Type): as wide as its content,
+   as tall as the neighbouring inputs. */
+.field-btn { flex: 1; align-self: flex-start; }
 
 .count-pill {
   min-width: 1.35rem;

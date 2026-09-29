@@ -55,7 +55,7 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
 - **Type-specific fields:** fields appear only for the type they belong to.
   - Nouns: article and plural. The Spanish label reads "Spanish (without article)".
   - Adjectives: the forms switch and inputs, with a label like "Spanish (masculine singular)".
-  - Verbs: the "Conjugations…" button.
+  - Verbs: the "Conjugations (optional)" field next to Type (an "Edit…" button).
   - With no type or another type, the label is just "Spanish". Changing the type away from noun clears the article and plural.
 - **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
 - **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
@@ -128,7 +128,7 @@ Group keys keep tense names from colliding: `subjunctive.present` is distinct fr
 
 ### Editing
 
-When type is `verb`, the shared form shows a "Conjugations…" button with a count of filled forms. It opens a dialog with a group switcher (Indicative / Imperative / Progressive), tense tabs for groups with several tenses, and the rows. The selected tense is remembered per group, and filled counts are shown on both groups and tenses.
+When type is `verb`, the shared form shows a "Conjugations (optional)" field next to Type with an "Edit…" button and a count of filled forms. It opens a dialog with a group switcher (Indicative / Imperative / Progressive), tense tabs for groups with several tenses, and the rows. The selected tense is remembered per group, and filled counts are shown on both groups and tenses.
 
 - **Done** applies the changes to the form; they're saved with the word. **Cancel** or Escape discards them.
 - If the type is changed away from verb, the conjugations stay in the form while editing but are removed on save.
