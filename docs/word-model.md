@@ -52,7 +52,11 @@ Saving a word through the shared form moves it between Vocabulary and Drafts aut
 
 Adding and editing use one shared form: [`WordForm`](../src/components/vocabulary/WordForm.tsx). Conversions live in [`src/lib/wordForm.ts`](../src/lib/wordForm.ts).
 
-- **Enabled fields:** article and plural are enabled only when type is `noun`. Changing the type away from noun clears them.
+- **Type-specific fields:** fields appear only for the type they belong to.
+  - Nouns: article and plural. The Spanish label reads "Spanish (without article)".
+  - Adjectives: the forms switch and inputs, with a label like "Spanish (masculine singular)".
+  - Verbs: the "Conjugations…" button.
+  - With no type or another type, the label is just "Spanish". Changing the type away from noun clears the article and plural.
 - **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
 - **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
 

@@ -47,7 +47,11 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
       <div className="word-form-grid">
         <label className="field span-3">
           <span className="field-label">
-            {isAdjective ? `Spanish (${adjectiveKind.baseLabel})` : 'Spanish (without article)'}
+            {isNoun
+              ? 'Spanish (without article)'
+              : isAdjective
+                ? `Spanish (${adjectiveKind.baseLabel})`
+                : 'Spanish'}
           </span>
           <input
             ref={spanishRef}
@@ -87,34 +91,37 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
             ))}
           </select>
         </label>
-        <label className="field span-2">
-          <span className="field-label">Article{!isNoun && ' (nouns only)'}</span>
-          <select
-            className="input"
-            value={values.article}
-            onChange={(e) => set({ article: isArticle(e.target.value) ? e.target.value : '' })}
-            disabled={!isNoun}
-          >
-            <option value="">Select article…</option>
-            {ARTICLES.map((a) => (
-              <option key={a} value={a}>
-                {ARTICLE_LABELS[a]}
-              </option>
-            ))}
-          </select>
-        </label>
-        <label className="field span-2">
-          <span className="field-label">Plural{isNoun ? ' (optional)' : ' (nouns only)'}</span>
-          <input
-            className="input"
-            value={values.plural}
-            onChange={(e) => set({ plural: e.target.value })}
-            placeholder={isNoun ? 'manzanas' : ''}
-            lang="es"
-            maxLength={300}
-            disabled={!isNoun}
-          />
-        </label>
+        {/* Nouns only; switching away from noun clears them (see withType). */}
+        {isNoun && (
+          <>
+            <label className="field span-2">
+              <span className="field-label">Article</span>
+              <select
+                className="input"
+                value={values.article}
+                onChange={(e) => set({ article: isArticle(e.target.value) ? e.target.value : '' })}
+              >
+                <option value="">Select article…</option>
+                {ARTICLES.map((a) => (
+                  <option key={a} value={a}>
+                    {ARTICLE_LABELS[a]}
+                  </option>
+                ))}
+              </select>
+            </label>
+            <label className="field span-2">
+              <span className="field-label">Plural (optional)</span>
+              <input
+                className="input"
+                value={values.plural}
+                onChange={(e) => set({ plural: e.target.value })}
+                placeholder="manzanas"
+                lang="es"
+                maxLength={300}
+              />
+            </label>
+          </>
+        )}
       </div>
 
       {/* Adjectives only: four-form / two-form switch and the optional other forms. */}
