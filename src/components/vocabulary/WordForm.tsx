@@ -2,6 +2,7 @@ import { useId, useState } from 'react';
 import type { FormEvent, ReactNode, Ref } from 'react';
 import { ADJECTIVE_KINDS, adjectiveKindConfig } from '../../constants/adjective';
 import type { AdjectiveFormKey } from '../../constants/adjective';
+import { discardedAdjectiveForms } from '../../lib/adjective';
 import { ARTICLES, ARTICLE_LABELS, WORD_TYPES, WORD_TYPE_LABELS, isArticle, isWordType } from '../../constants/word';
 import { countForms } from '../../lib/conjugations';
 import { adjectiveFieldsApply, formCompletenessFields, nounFieldsApply, verbFieldsApply, withType } from '../../lib/wordForm';
@@ -29,6 +30,8 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   const isAdjective = adjectiveFieldsApply(values.type);
   const adjectiveKind = adjectiveKindConfig(values.adjective.kind);
   const adjectiveRadioName = useId();
+  const discardedForms = isAdjective ? discardedAdjectiveForms(values.adjective) : [];
+  const discardedKinds = [...new Set(discardedForms.map((entry) => entry.kind.label))].join(' / ');
   const [conjugationsOpen, setConjugationsOpen] = useState(false);
   const formCount = countForms(values.conjugations);
   const missing = getMissingFields(formCompletenessFields(values));
@@ -162,6 +165,12 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
             </label>
           ))}
         </div>
+      )}
+      {discardedForms.length > 0 && (
+        <p className="alert alert-warn" role="status">
+          The {discardedKinds} {discardedForms.length === 1 ? 'form' : 'forms'}{' '}
+          will be deleted on save, since an adjective can't be both gender specific and neutral.
+        </p>
       )}
 
       {/* Verbs only. Conjugations don't affect completeness and aren't used in practice (yet). */}

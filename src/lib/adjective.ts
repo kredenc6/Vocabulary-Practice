@@ -42,6 +42,15 @@ export function adjectiveToFormState(adjective?: AdjectiveForms): AdjectiveFormS
   return state as AdjectiveFormState;
 }
 
+/** Filled-in forms of the kinds other than the chosen one; cleanAdjective drops these on save. */
+export function discardedAdjectiveForms(state: AdjectiveFormState) {
+  return ADJECTIVE_KINDS.filter((kind) => kind.key !== state.kind).flatMap((kind) =>
+    kind.forms
+      .map((form) => ({ kind, form, value: state[form.key].trim() }))
+      .filter((entry) => entry.value),
+  );
+}
+
 /** A stored form value ('' when absent). */
 export function adjectiveForm(adjective: AdjectiveForms | undefined, key: AdjectiveFormKey): string {
   const value = (adjective as Record<string, unknown> | undefined)?.[key];
