@@ -82,6 +82,7 @@ export const CONJUGATION_GROUPS = [
     label: 'Imperative',
     excludedPersons: ['yo'],
     personLabels: { el: 'Ud.', ellos: 'Uds.' },
+    tablePaste: true,
     tenses: [
       { key: 'affirmative', label: 'Affirmative', note: 'e.g. habla, hable, hablad' },
       { key: 'negative', label: 'Negative', note: 'Include “no”, e.g. no hables, no hable' },

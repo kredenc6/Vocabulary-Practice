@@ -273,12 +273,15 @@ interface TablePastePanelProps {
 /** Textarea for a copied conjugation table, with a live check of what it fills. */
 function TablePastePanel({ group, text, onTextChange, parsed, replaced }: TablePastePanelProps) {
   const tenseLabels = group.tenses.map((t) => t.label).join(', ');
+  const excludedLabels = (group.excludedPersons ?? []).map((p) => `“${personLabel(group, p)}”`).join(', ');
 
   return (
     <div className="conj-body" role="region" aria-label={`Paste ${group.label.toLowerCase()} table`}>
       <p id="conj-paste-hint" className="small muted">
-        Paste a conjugation table: the tense names first ({tenseLabels} – in any order, some may be left out), then
-        each person followed by one form per tense. Cells can be on separate lines or separated by tabs.
+        Paste a conjugation table: the column headings first ({tenseLabels} – in any order, some may be left out),
+        then each person followed by one form per column. Cells can be on separate lines or separated by tabs. A “-”
+        cell leaves that form out.
+        {excludedLabels && ` Rows for ${excludedLabels} are skipped (only “-” allowed in them).`}
       </p>
       <textarea
         className="input conj-paste-input"

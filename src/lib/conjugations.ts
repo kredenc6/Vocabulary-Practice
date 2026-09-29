@@ -141,16 +141,29 @@ function matchPerson(cell: string): Person | undefined {
   });
 }
 
+/** A cell marking a missing form: "-", "–" or "—" (e.g. yo in the imperative). */
+function isEmptyCell(cell: string): boolean {
+  return /^[-–—]+$/.test(cell);
+}
+
+/** A few persons the group uses, for error messages, e.g. "yo, tú, …" or "tú, Ud., …". */
+function personExamples(group: PersonsGroupConfig): string {
+  const labels = PERSONS.filter((p) => personApplies(group, p)).slice(0, 2).map((p) => personLabel(group, p));
+  return `${labels.join(', ')}, …`;
+}
+
 /**
  * Parse a conjugation table copied from a website, e.g.
  *
- *   Present  Preterite  …         (tense names: the column order)
- *   yo                            (a person, then one form per tense)
+ *   Present  Preterite  …         (column headings: tense names in column order)
+ *   yo                            (a person, then one form per column)
  *   trabajo
  *   trabajé
  *   …
  *
  * Cells may be separated by line breaks or tabs; empty cells are ignored.
+ * A dash cell ("-") means no form: that form is not filled. Persons the group
+ * doesn't use (yo in the imperative) may appear, but only with dash cells.
  * Persons may come in any order, and missing ones are simply not filled.
  */
 export function parseConjugationTable(text: string, group: PersonsGroupConfig): ParsedTable {
@@ -165,40 +178,49 @@ export function parseConjugationTable(text: string, group: PersonsGroupConfig): 
   for (; i < cells.length; i++) {
     const tense = group.tenses.find((t) => normalizeLabel(t.label) === normalizeLabel(cells[i]));
     if (!tense) break;
-    if (tenses.includes(tense.key)) return { ok: false, error: `The tense “${tense.label}” appears twice.` };
+    if (tenses.includes(tense.key)) return { ok: false, error: `The heading “${tense.label}” appears twice.` };
     tenses.push(tense.key);
   }
   if (!tenses.length) {
     const names = group.tenses.map((t) => t.label).join(', ');
-    return { ok: false, error: `Start with the tense names (${names}) – found “${cells[0]}”.` };
+    return { ok: false, error: `Start with the column headings (${names}) – found “${cells[0]}”.` };
   }
 
+  const examples = personExamples(group);
+  const seen: Person[] = [];
   const persons: Person[] = [];
   const forms: ParsedForm[] = [];
   while (i < cells.length) {
     const person = matchPerson(cells[i]);
     if (!person) {
-      const previous = persons[persons.length - 1];
+      const previous = seen[seen.length - 1];
       const error = previous
-        ? `“${cells[i]}” is not a person (yo, tú, …) – or “${personLabel(group, previous)}” has more than ${tenses.length} ${tenses.length === 1 ? 'form' : 'forms'}.`
-        : `“${cells[i]}” is not a tense or a person (yo, tú, …).`;
+        ? `“${cells[i]}” is not a person (${examples}) – or “${personLabel(group, previous)}” has more than ${tenses.length} ${tenses.length === 1 ? 'form' : 'forms'}.`
+        : `“${cells[i]}” is not a column heading or a person (${examples}).`;
       return { ok: false, error };
     }
     const label = personLabel(group, person);
-    if (!personApplies(group, person)) {
-      return { ok: false, error: `“${label}” is not used in the ${group.label.toLowerCase()}.` };
-    }
-    if (persons.includes(person)) return { ok: false, error: `“${label}” appears twice.` };
-    persons.push(person);
+    if (seen.includes(person)) return { ok: false, error: `“${label}” appears twice.` };
+    seen.push(person);
     i++;
     const values: string[] = [];
     while (i < cells.length && values.length < tenses.length && !matchPerson(cells[i])) values.push(cells[i++]);
+    if (!personApplies(group, person)) {
+      if (values.every(isEmptyCell)) continue;
+      return {
+        ok: false,
+        error: `“${label}” is not used in the ${group.label.toLowerCase()} – leave its row out or use “-” instead of forms.`,
+      };
+    }
     if (values.length < tenses.length) {
       return { ok: false, error: `“${label}” has ${values.length} of ${tenses.length} forms.` };
     }
-    values.forEach((value, t) => forms.push({ tense: tenses[t], person, value: value.slice(0, MAX_FORM_LENGTH) }));
+    persons.push(person);
+    values.forEach((value, t) => {
+      if (!isEmptyCell(value)) forms.push({ tense: tenses[t], person, value: value.slice(0, MAX_FORM_LENGTH) });
+    });
   }
-  if (!persons.length) return { ok: false, error: 'No persons (yo, tú, …) found after the tense names.' };
+  if (!persons.length) return { ok: false, error: `No persons (${examples}) found after the column headings.` };
   return { ok: true, tenses, persons, forms };
 }
 
