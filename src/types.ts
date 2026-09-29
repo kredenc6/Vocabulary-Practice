@@ -37,10 +37,12 @@ export interface VocabWordData extends SrsState {
   article?: Article;
   /** Plural form, without article. */
   plural?: string;
-  /** Verbs only: conjugations[tense][person] = form. Only non-empty values are stored. */
+  /**
+   * Verbs only, grouped as configured in src/constants/conjugation.ts, e.g.
+   * conjugations.indicative.present.yo, conjugations.progressive.gerund.
+   * Only non-empty values are stored.
+   */
   conjugations?: Conjugations;
-  /** Verbs only: the gerund, e.g. "trabajando" (estar forms are generated, not stored). */
-  gerund?: string;
   /** Written as WORD_SCHEMA_VERSION on every write; absent only on legacy documents. */
   schemaVersion?: number;
   createdAt: EpochMs;
@@ -64,7 +66,6 @@ export interface WordInput extends WordPairInput {
   article?: Article;
   plural?: string;
   conjugations?: Conjugations;
-  gerund?: string;
 }
 
 /**
@@ -78,7 +79,6 @@ export interface WordUpdate {
   article?: Article | null;
   plural?: string | null;
   conjugations?: Conjugations | null;
-  gerund?: string | null;
 }
 
 export type WordStatus = 'new' | 'learning' | 'mastered';

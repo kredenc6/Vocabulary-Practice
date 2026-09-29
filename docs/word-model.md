@@ -16,8 +16,7 @@ Words are stored per user at `users/{uid}/words/{wordId}`. The Firestore documen
 | `type` | `WordType`? | See [Constants](#constants). Absent = not filled in. |
 | `article` | `Article`? | Absent = not filled in. `not_used` = noun used without an article, which is **not** the same as absent. |
 | `plural` | string? | Plural form without its article, at most 300 characters. |
-| `conjugations` | `Conjugations`? | Verbs only. `conjugations[tense][person] = form`, only non-empty values. See [Verb conjugations](#verb-conjugations). |
-| `gerund` | string? | Verbs only, e.g. "trabajando". The estar + gerund forms are generated, not stored. |
+| `conjugations` | `Conjugations`? | Verbs only, grouped: `conjugations[group][tense][person]` or `conjugations[group][form]`, with only non-empty values. The gerund is `conjugations.progressive.gerund`. See [Verb conjugations](#verb-conjugations). |
 | `schemaVersion` | int | Always written as `WORD_SCHEMA_VERSION` (currently `1`) on every create and update. |
 | `createdAt`, `updatedAt` | int | Epoch milliseconds. |
 | `easeFactor`, `interval`, `repetitions`, `nextReviewDate`, `lastReviewedAt`, `lapses`, `totalReviews`, `correctReviews` | numbers | Spaced-repetition state (SM-2), see [`src/lib/srs.ts`](../src/lib/srs.ts). |
@@ -60,16 +59,56 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
 
 A verb's `spanish` is its infinitive (not validated). Conjugations are **data only**: they aren't shown in practice, and they don't affect completeness, so a verb with just an infinitive is complete.
 
-- **Config:** [`src/constants/conjugation.ts`](../src/constants/conjugation.ts) is the single source of truth.
-  - `TENSE_CONFIG` is an ordered list of `{ key, label, excludedPersons?, personLabels? }`. The tenses are present, preterite, imperfect, conditional, future and imperative.
-  - `PERSONS` are `yo`, `tu`, `el`, `nosotros`, `vosotros`, `ellos`, labelled "yo", "tú", "él/ella/Ud.", "nosotros", "vosotros", "ellos/ellas/Uds.".
-  - The imperative excludes `yo` and labels `el` / `ellos` as "Ud." / "Uds.".
-  - Keys are ASCII and stored; labels are UI-only.
-- **Adding a tense** (e.g. subjunctive): add one `TENSE_CONFIG` entry. The `Tense` type, the editor tabs and rows, and the cleaning logic follow automatically. Also add the key to `tenses()` and a check line to `isValidConjugations()` in `firestore.rules`.
-- **Cleaning:** [`src/lib/conjugations.ts`](../src/lib/conjugations.ts) (`cleanConjugations`, `cleanGerund`) is used by the form, the repository before writing, and the converter when reading. It keeps only known tenses and persons that apply, with trimmed non-empty strings of at most 300 characters. An empty result means the field is omitted on create and removed with `deleteField()` on update. Updates replace the whole `conjugations` map.
-- **Editing:** when type is `verb`, the shared form shows a "Conjugations…" button with a count of filled forms. It opens a dialog with one tab per tense, and excluded persons appear disabled.
-  - **Done** applies the changes to the form; they're saved with the word. **Cancel** or Escape discards them.
-  - If the type is changed away from verb, the conjugations stay in the form while editing but are removed on save.
+### Groups
+
+[`src/constants/conjugation.ts`](../src/constants/conjugation.ts) is the single source of truth. `CONJUGATION_GROUPS` is an ordered list of groups of two kinds:
+
+- **`persons` groups** have tenses, each with one form per person. They're stored as `conjugations[group][tense][person]`. A group can exclude persons (shown disabled, never stored) and relabel them. A tense can carry a short `note` shown in the editor.
+- **`forms` groups** have a few single, non-personal forms. They're stored as `conjugations[group][form]`.
+
+| Group | Kind | Tenses / forms | Notes |
+| --- | --- | --- | --- |
+| `indicative` | persons | `present`, `preterite`, `imperfect`, `conditional`, `future` | all six persons |
+| `imperative` | persons | `affirmative`, `negative` | excludes `yo`; `el` / `ellos` labelled "Ud." / "Uds."; negative forms include "no" (e.g. "no hables") |
+| `progressive` | forms | `gerund` | e.g. "trabajando"; the estar + gerund forms are generated, not stored |
+
+`PERSONS` are `yo`, `tu`, `el`, `nosotros`, `vosotros`, `ellos`, labelled "yo", "tú", "él/ella/Ud.", "nosotros", "vosotros", "ellos/ellas/Uds.". Keys are ASCII and stored; labels are UI-only.
+
+Example document value:
+
+```json
+{
+  "indicative": { "present": { "yo": "hablo", "tu": "hablas" } },
+  "imperative": { "affirmative": { "tu": "habla" }, "negative": { "tu": "no hables" } },
+  "progressive": { "gerund": "hablando" }
+}
+```
+
+The `Conjugations` TypeScript type is derived from the config, so `word.conjugations?.indicative?.present?.yo` is type-checked, and unknown groups, tenses or persons are compile errors.
+
+### Adding a group
+
+To add a group (e.g. subjunctive with `present`/`imperfect`, or perfect with a `participle` form):
+
+1. Add one entry to `CONJUGATION_GROUPS`. The types, the editor (group switcher, tense tabs, rows), counting and cleaning all follow automatically.
+2. In `firestore.rules`, add the group key to the `hasOnly()` list in `isValidConjugations()`, plus one `isValid_<group>()` function. Rules can't loop, so each group's tenses or forms are listed explicitly; copy an existing function.
+
+Group keys keep tense names from colliding: `subjunctive.present` is distinct from `indicative.present`.
+
+### Cleaning and saving
+
+[`src/lib/conjugations.ts`](../src/lib/conjugations.ts) is config-driven: `cleanConjugations`, `get/setPersonForm`, `get/setSingleForm` and the counters. The form, the repository (before writing) and the converter (when reading) all use `cleanConjugations`. It keeps only configured groups, tenses and forms, and only persons that apply, with trimmed non-empty strings of at most 300 characters.
+
+- An empty result means the field is omitted on create and removed with `deleteField()` on update.
+- Updates replace the whole `conjugations` map.
+- Data in any other shape, e.g. the earlier flat `conjugations[tense]` and top-level `gerund`, reads as empty.
+
+### Editing
+
+When type is `verb`, the shared form shows a "Conjugations…" button with a count of filled forms. It opens a dialog with a group switcher (Indicative / Imperative / Progressive), tense tabs for groups with several tenses, and the rows. The selected tense is remembered per group, and filled counts are shown on both groups and tenses.
+
+- **Done** applies the changes to the form; they're saved with the word. **Cancel** or Escape discards them.
+- If the type is changed away from verb, the conjugations stay in the form while editing but are removed on save.
 
 ## Display and grading
 

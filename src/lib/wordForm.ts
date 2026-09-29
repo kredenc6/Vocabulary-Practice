@@ -1,11 +1,11 @@
 /**
  * Form values for adding/editing a word and their conversion to the stored
  * model (see docs/word-model.md). Article and plural only apply to nouns;
- * conjugations and gerund only apply to verbs.
+ * conjugations only apply to verbs.
  */
 import type { Conjugations } from '../constants/conjugation';
 import type { Article, WordType } from '../constants/word';
-import { cleanConjugations, cleanGerund } from './conjugations';
+import { cleanConjugations } from './conjugations';
 import type { VocabWordData, WordInput, WordUpdate } from '../types';
 import type { WordCompletenessFields } from './wordValidation';
 import { formatSpanish } from './wordDisplay';
@@ -19,7 +19,6 @@ export interface WordFormValues {
   plural: string;
   /** Raw editor state (may contain empty strings); cleaned on save. */
   conjugations: Conjugations;
-  gerund: string;
 }
 
 export const EMPTY_WORD_FORM: WordFormValues = {
@@ -29,7 +28,6 @@ export const EMPTY_WORD_FORM: WordFormValues = {
   article: '',
   plural: '',
   conjugations: {},
-  gerund: '',
 };
 
 export function wordToFormValues(word: VocabWordData): WordFormValues {
@@ -40,7 +38,6 @@ export function wordToFormValues(word: VocabWordData): WordFormValues {
     article: word.article ?? '',
     plural: word.plural ?? '',
     conjugations: word.conjugations ?? {},
-    gerund: word.gerund ?? '',
   };
 }
 
@@ -79,7 +76,6 @@ function normalized(values: WordFormValues) {
     article: (noun && values.article) || undefined,
     plural: (noun && values.plural.trim()) || undefined,
     conjugations: verb ? cleanConjugations(values.conjugations) : undefined,
-    gerund: verb ? cleanGerund(values.gerund) : undefined,
   };
 }
 
@@ -90,7 +86,7 @@ export function formCompletenessFields(values: WordFormValues): WordCompleteness
 
 /** For creating a word: fields that are empty or don't apply are omitted. */
 export function formToWordInput(values: WordFormValues): WordInput {
-  const { spanish, english, type, article, plural, conjugations, gerund } = normalized(values);
+  const { spanish, english, type, article, plural, conjugations } = normalized(values);
   return {
     spanish,
     english,
@@ -98,13 +94,12 @@ export function formToWordInput(values: WordFormValues): WordInput {
     ...(article && { article }),
     ...(plural && { plural }),
     ...(conjugations && { conjugations }),
-    ...(gerund && { gerund }),
   };
 }
 
 /** For updating a word: fields that are empty or don't apply are cleared (null → deleteField()). */
 export function formToWordUpdate(values: WordFormValues): WordUpdate {
-  const { spanish, english, type, article, plural, conjugations, gerund } = normalized(values);
+  const { spanish, english, type, article, plural, conjugations } = normalized(values);
   return {
     spanish,
     english,
@@ -112,6 +107,5 @@ export function formToWordUpdate(values: WordFormValues): WordUpdate {
     article: article ?? null,
     plural: plural ?? null,
     conjugations: conjugations ?? null,
-    gerund: gerund ?? null,
   };
 }

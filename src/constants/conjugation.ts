@@ -1,10 +1,15 @@
 /**
- * Verb conjugation config – the single source of truth for tenses and persons.
- * Keys are plain ASCII (they are stored in Firestore); labels are for the UI.
+ * Verb conjugation config – the single source of truth for conjugation groups,
+ * their tenses/forms and the persons. Keys are plain ASCII (they are stored in
+ * Firestore); labels are for the UI.
  *
- * To add a tense (e.g. subjunctive), add one entry to TENSE_CONFIG. The editor,
- * types and data handling follow automatically. firestore.rules repeats the
- * tense keys in `tenses()` – add it there too. See docs/word-model.md.
+ * Stored shape (only non-empty values):
+ *   conjugations[group][tense][person] = form   – "persons" groups (indicative, imperative)
+ *   conjugations[group][form]          = form   – "forms" groups (progressive: gerund)
+ *
+ * To add a group (e.g. subjunctive, perfect), add one entry to CONJUGATION_GROUPS.
+ * The editor, types and data handling follow automatically. firestore.rules
+ * mirrors the keys – add the group there too. See docs/word-model.md.
  */
 
 export const PERSONS = ['yo', 'tu', 'el', 'nosotros', 'vosotros', 'ellos'] as const;
@@ -19,51 +24,93 @@ export const PERSON_LABELS: Record<Person, string> = {
   ellos: 'ellos/ellas/Uds.',
 };
 
-interface TenseConfig {
+export interface TenseConfig {
   key: string;
   label: string;
-  /** Persons that don't exist in this tense (shown disabled, never stored). */
+  /** Short hint shown above the rows. */
+  note?: string;
+}
+
+/** A group whose tenses have one form per person. */
+export interface PersonsGroupConfig {
+  kind: 'persons';
+  key: string;
+  label: string;
+  /** Persons that don't exist in this group (shown disabled, never stored). */
   excludedPersons?: readonly Person[];
-  /** Tense-specific person labels, overriding PERSON_LABELS. */
+  /** Group-specific person labels, overriding PERSON_LABELS. */
   personLabels?: Partial<Record<Person, string>>;
+  tenses: readonly TenseConfig[];
 }
 
-export const TENSE_CONFIG = [
-  { key: 'present', label: 'Present' },
-  { key: 'preterite', label: 'Preterite' },
-  { key: 'imperfect', label: 'Imperfect' },
-  { key: 'conditional', label: 'Conditional' },
-  { key: 'future', label: 'Future' },
-  { key: 'imperative', label: 'Imperative', excludedPersons: ['yo'], personLabels: { el: 'Ud.', ellos: 'Uds.' } },
-] as const satisfies readonly TenseConfig[];
-
-export type Tense = (typeof TENSE_CONFIG)[number]['key'];
-
-export const TENSES: readonly Tense[] = TENSE_CONFIG.map((t) => t.key);
-
-/** Stored shape: conjugations[tense][person] = form, only non-empty values. */
-export type Conjugations = Partial<Record<Tense, Partial<Record<Person, string>>>>;
-
-function tenseConfig(tense: Tense): TenseConfig {
-  return TENSE_CONFIG.find((t) => t.key === tense)!;
+export interface SingleFormConfig {
+  key: string;
+  label: string;
+  placeholder?: string;
 }
 
-export function tenseLabel(tense: Tense): string {
-  return tenseConfig(tense).label;
+/** A group with a few single (non-personal) forms, e.g. the gerund. */
+export interface FormsGroupConfig {
+  kind: 'forms';
+  key: string;
+  label: string;
+  note?: string;
+  forms: readonly SingleFormConfig[];
 }
 
-export function personApplies(tense: Tense, person: Person): boolean {
-  return !tenseConfig(tense).excludedPersons?.includes(person);
+export type GroupConfig = PersonsGroupConfig | FormsGroupConfig;
+
+export const CONJUGATION_GROUPS = [
+  {
+    kind: 'persons',
+    key: 'indicative',
+    label: 'Indicative',
+    tenses: [
+      { key: 'present', label: 'Present' },
+      { key: 'preterite', label: 'Preterite' },
+      { key: 'imperfect', label: 'Imperfect' },
+      { key: 'conditional', label: 'Conditional' },
+      { key: 'future', label: 'Future' },
+    ],
+  },
+  {
+    kind: 'persons',
+    key: 'imperative',
+    label: 'Imperative',
+    excludedPersons: ['yo'],
+    personLabels: { el: 'Ud.', ellos: 'Uds.' },
+    tenses: [
+      { key: 'affirmative', label: 'Affirmative', note: 'e.g. habla, hable, hablad' },
+      { key: 'negative', label: 'Negative', note: 'Include “no”, e.g. no hables, no hable' },
+    ],
+  },
+  {
+    kind: 'forms',
+    key: 'progressive',
+    label: 'Progressive',
+    note: 'The estar + gerund forms (estoy hablando, …) are generated from the gerund.',
+    forms: [{ key: 'gerund', label: 'Gerund', placeholder: 'e.g. trabajando' }],
+  },
+] as const satisfies readonly GroupConfig[];
+
+type Groups = (typeof CONJUGATION_GROUPS)[number];
+export type ConjugationGroupKey = Groups['key'];
+
+type PersonForms = Partial<Record<Person, string>>;
+
+/** Typed stored shape, derived from CONJUGATION_GROUPS. */
+export type Conjugations = {
+  [G in Groups as G['key']]?: G extends { tenses: readonly { key: infer K extends string }[] }
+    ? Partial<Record<K, PersonForms>>
+    : G extends { forms: readonly { key: infer K extends string }[] }
+      ? Partial<Record<K, string>>
+      : never;
+};
+
+export function personApplies(group: PersonsGroupConfig, person: Person): boolean {
+  return !group.excludedPersons?.includes(person);
 }
 
-export function personLabel(tense: Tense, person: Person): string {
-  return tenseConfig(tense).personLabels?.[person] ?? PERSON_LABELS[person];
-}
-
-export function isTense(value: unknown): value is Tense {
-  return typeof value === 'string' && (TENSES as readonly string[]).includes(value);
-}
-
-export function isPerson(value: unknown): value is Person {
-  return typeof value === 'string' && (PERSONS as readonly string[]).includes(value);
+export function personLabel(group: PersonsGroupConfig, person: Person): string {
+  return group.personLabels?.[person] ?? PERSON_LABELS[person];
 }

@@ -15,7 +15,7 @@ import type { Conjugations } from '../constants/conjugation';
 import { WORD_SCHEMA_VERSION } from '../constants/word';
 import { db } from '../firebase/firebase';
 import { dailyStatDocRaw, wordDoc, wordsCol } from '../firebase/paths';
-import { cleanConjugations, cleanGerund } from '../lib/conjugations';
+import { cleanConjugations } from '../lib/conjugations';
 import { applyReview, initialSrsState, outcomeToQuality, pickSrs } from '../lib/srs';
 import { dayKey } from '../lib/dates';
 import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordUpdate } from '../types';
@@ -27,7 +27,6 @@ const BATCH_SIZE = 400;
 function cleanInput(input: WordInput): WordInput {
   const plural = input.plural?.trim();
   const conjugations = cleanConjugations(input.conjugations);
-  const gerund = cleanGerund(input.gerund);
   return {
     spanish: input.spanish.trim(),
     english: input.english.trim(),
@@ -35,7 +34,6 @@ function cleanInput(input: WordInput): WordInput {
     ...(input.article && { article: input.article }),
     ...(plural && { plural }),
     ...(conjugations && { conjugations }),
-    ...(gerund && { gerund }),
   };
 }
 
@@ -83,7 +81,7 @@ export async function updateWord(uid: string, wordId: string, changes: WordUpdat
     data.spanish = spanish;
   }
   if (changes.english !== undefined) data.english = changes.english.trim();
-  for (const key of ['type', 'article', 'plural', 'gerund'] as const) {
+  for (const key of ['type', 'article', 'plural'] as const) {
     const value = optionalField(changes[key]);
     if (value !== undefined) data[key] = value;
   }

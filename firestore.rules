@@ -23,38 +23,48 @@ service cloud.firestore {
       return ['un', 'una', 'el', 'la', 'not_used'];
     }
 
-    // Keep in sync with src/constants/conjugation.ts (TENSE_CONFIG and PERSONS).
-    function tenses() {
-      return ['present', 'preterite', 'imperfect', 'conditional', 'future', 'imperative'];
-    }
-
-    function persons() {
-      return ['yo', 'tu', 'el', 'nosotros', 'vosotros', 'ellos'];
-    }
-
+    // Conjugations – mirrors CONJUGATION_GROUPS in src/constants/conjugation.ts.
+    // Shape: conjugations[group][tense][person] (persons groups) or conjugations[group][form].
+    // Adding a group: add its key to the hasOnly() list below plus one isValid_<group>() function.
     function isForm(value) {
       return value is string && value.size() <= 300;
     }
 
-    // conjugations[tense][person] = string
     function isValidTense(m) {
-      return m is map && m.keys().hasOnly(persons())
-        && (!('yo' in m) || isForm(m.yo))
-        && (!('tu' in m) || isForm(m.tu))
-        && (!('el' in m) || isForm(m.el))
-        && (!('nosotros' in m) || isForm(m.nosotros))
-        && (!('vosotros' in m) || isForm(m.vosotros))
-        && (!('ellos' in m) || isForm(m.ellos));
+      return m is map && m.keys().hasOnly(['yo', 'tu', 'el', 'nosotros', 'vosotros', 'ellos'])
+        && isForm(m.get('yo', ''))
+        && isForm(m.get('tu', ''))
+        && isForm(m.get('el', ''))
+        && isForm(m.get('nosotros', ''))
+        && isForm(m.get('vosotros', ''))
+        && isForm(m.get('ellos', ''));
+    }
+
+    function isValid_indicative(g) {
+      return g is map && g.keys().hasOnly(['present', 'preterite', 'imperfect', 'conditional', 'future'])
+        && isValidTense(g.get('present', {}))
+        && isValidTense(g.get('preterite', {}))
+        && isValidTense(g.get('imperfect', {}))
+        && isValidTense(g.get('conditional', {}))
+        && isValidTense(g.get('future', {}));
+    }
+
+    function isValid_imperative(g) {
+      return g is map && g.keys().hasOnly(['affirmative', 'negative'])
+        && isValidTense(g.get('affirmative', {}))
+        && isValidTense(g.get('negative', {}));
+    }
+
+    function isValid_progressive(g) {
+      return g is map && g.keys().hasOnly(['gerund'])
+        && isForm(g.get('gerund', ''));
     }
 
     function isValidConjugations(c) {
-      return c is map && c.keys().hasOnly(tenses())
-        && (!('present' in c) || isValidTense(c.present))
-        && (!('preterite' in c) || isValidTense(c.preterite))
-        && (!('imperfect' in c) || isValidTense(c.imperfect))
-        && (!('conditional' in c) || isValidTense(c.conditional))
-        && (!('future' in c) || isValidTense(c.future))
-        && (!('imperative' in c) || isValidTense(c.imperative));
+      return c is map && c.keys().hasOnly(['indicative', 'imperative', 'progressive'])
+        && isValid_indicative(c.get('indicative', {}))
+        && isValid_imperative(c.get('imperative', {}))
+        && isValid_progressive(c.get('progressive', {}));
     }
 
     // Optional fields may be absent ("not filled in") but must be valid when present.
@@ -65,7 +75,6 @@ service cloud.firestore {
         && (!('article' in data) || data.article in articles())
         && (!('plural' in data) || (data.plural is string && data.plural.size() <= 300))
         && (!('conjugations' in data) || isValidConjugations(data.conjugations))
-        && (!('gerund' in data) || isForm(data.gerund))
         && data.schemaVersion is int
         && data.easeFactor is number
         && data.interval is number

@@ -25,7 +25,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   const isNoun = nounFieldsApply(values.type);
   const isVerb = verbFieldsApply(values.type);
   const [conjugationsOpen, setConjugationsOpen] = useState(false);
-  const formCount = countForms(values.conjugations, values.gerund);
+  const formCount = countForms(values.conjugations);
   const missing = getMissingFields(formCompletenessFields(values));
   const complete = missing.length === 0;
   const canSubmit = values.spanish.trim() !== '';
@@ -128,9 +128,8 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
         <ConjugationDialog
           infinitive={values.spanish}
           conjugations={values.conjugations}
-          gerund={values.gerund}
-          onDone={(conjugations, gerund) => {
-            onChange({ ...values, conjugations, gerund });
+          onDone={(conjugations) => {
+            onChange({ ...values, conjugations });
             setConjugationsOpen(false);
           }}
           onCancel={() => setConjugationsOpen(false)}
