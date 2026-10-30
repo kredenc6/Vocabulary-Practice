@@ -58,7 +58,7 @@ function FormatHelp() {
       </p>
       <p>
         Rows without an English translation, a type, or a noun's article are imported as drafts. Words whose Spanish
-        already exists are skipped.
+        already exists in the complete vocabulary are skipped; saved drafts are excluded from this check.
       </p>
     </>
   );

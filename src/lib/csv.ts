@@ -160,7 +160,7 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
     invalidValues: [],
     warnings,
   };
-  const existingKeys = new Set(existing.map((w) => spanishKey(w.spanish)));
+  const existingKeys = new Set(existing.filter(isComplete).map((w) => spanishKey(w.spanish)));
   const firstRowInFile = new Map<string, number>();
 
   rows.forEach((row, index) => {

@@ -44,7 +44,7 @@ Drafts never reach practice or statistics. `WordsContext` provides three derived
 
 - `practiceWords`: complete words only. It's the only list practice and statistics code may use, and the main Vocabulary list shows it.
 - `draftWords`: drafts only. The Drafts tab shows it, and its size is the nav badge.
-- `words`: everything. It's used for duplicate checks and CSV export.
+- `words`: everything. It's used for CSV export. Duplicate checks against saved words use complete words only, excluding drafts.
 
 Saving a word through the shared form moves it between Vocabulary and Drafts automatically, because the status is derived. Draft rows show `MISSING_FIELD_TAGS` (e.g. "no type") from `getMissingFields`.
 
@@ -157,7 +157,7 @@ Code: [`src/lib/csv.ts`](../src/lib/csv.ts) and [`CsvImport.tsx`](../src/compone
   - `type` and `article` are case-insensitive; `article` also accepts "not used". An invalid value counts as missing and is reported.
   - `article` and `plural` are ignored on non-nouns.
   - Fully blank lines are skipped silently.
-- **Duplicates:** matched on `spanish` only (trimmed, case-insensitive), against existing words and earlier rows. The first occurrence wins.
+- **Duplicates:** matched on `spanish` only (trimmed, case-insensitive), against existing complete words and earlier accepted rows. Saved drafts are excluded. The first occurrence in the file wins.
 - **Planning then writing:** `planCsvImport()` is pure and builds the whole plan in memory. The UI shows it as a preview, and only "Import" writes, via `importWords` (batches of 400, fresh review schedule). The same report is shown afterwards.
 - **Export** writes the same format, so an exported file can be imported again.
 

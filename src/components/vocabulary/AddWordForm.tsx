@@ -7,7 +7,7 @@ import { isComplete } from '../../lib/wordValidation';
 import { WordForm } from './WordForm';
 
 export function AddWordForm() {
-  const { words, addWord } = useWords();
+  const { practiceWords, addWord } = useWords();
   const [values, setValues] = useState<WordFormValues>(EMPTY_WORD_FORM);
   const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
   const spanishRef = useRef<HTMLInputElement>(null);
@@ -17,7 +17,7 @@ export function AddWordForm() {
     const label = wordLabel(input);
 
     const key = pairKey(input);
-    if (words.some((w) => pairKey(w) === key)) {
+    if (practiceWords.some((w) => pairKey(w) === key)) {
       setMessage({ type: 'error', text: `"${label}" is already in your vocabulary.` });
       return;
     }

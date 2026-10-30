@@ -30,7 +30,7 @@ export interface WordRowOptions {
 
 /** Edit/delete state shared by the vocabulary list and the drafts list. */
 export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions = {}): WordRowState {
-  const { words, updateWord, deleteWord, resetProgress } = useWords();
+  const { practiceWords, updateWord, deleteWord, resetProgress } = useWords();
   const [mode, setMode] = useState<WordRowMode>('view');
   const [values, setValues] = useState<WordFormValues>(() => wordToFormValues(word));
   const [error, setError] = useState<string | null>(null);
@@ -52,7 +52,7 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
       // Block duplicate Spanish/English pairs for edits.
       const input = formToWordInput(values);
       const key = pairKey(input);
-      if (words.some((w) => w.id !== word.id && pairKey(w) === key)) {
+      if (practiceWords.some((w) => w.id !== word.id && pairKey(w) === key)) {
         setError(`"${wordLabel(input)}" is already in your vocabulary.`);
         return;
       }
