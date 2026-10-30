@@ -35,3 +35,6 @@ firestore-debug.log*
 
 # Claude
 CLAUDE.md
+
+# Codex
+AGENTS.md

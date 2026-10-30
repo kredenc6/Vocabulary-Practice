@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useWords } from '../context/words';
+import { pairKey } from '../lib/csv';
 import { formCompletenessFields, formToWordInput, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
 import { isComplete } from '../lib/wordValidation';
 import type { WordFormValues } from '../lib/wordForm';
@@ -29,7 +30,7 @@ export interface WordRowOptions {
 
 /** Edit/delete state shared by the vocabulary list and the drafts list. */
 export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions = {}): WordRowState {
-  const { updateWord, deleteWord, resetProgress } = useWords();
+  const { words, updateWord, deleteWord, resetProgress } = useWords();
   const [mode, setMode] = useState<WordRowMode>('view');
   const [values, setValues] = useState<WordFormValues>(() => wordToFormValues(word));
   const [error, setError] = useState<string | null>(null);
@@ -48,6 +49,15 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
     // An incomplete word simply stays (or becomes) a draft – the status is derived,
     // so the row moves between the vocabulary list and Drafts by itself.
     async save() {
+      // Block duplicate Spanish/English pairs for edits.
+      const input = formToWordInput(values);
+      const key = pairKey(input);
+      if (words.some((w) => w.id !== word.id && pairKey(w) === key)) {
+        setError(`"${wordLabel(input)}" is already in your vocabulary.`);
+        return;
+      }
+
+      setError(null);
       const becomesDraft = isComplete(word) && !isComplete(formCompletenessFields(values));
       try {
         await updateWord(word.id, formToWordUpdate(values));
