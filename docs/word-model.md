@@ -157,7 +157,7 @@ Code: [`src/lib/csv.ts`](../src/lib/csv.ts) and [`CsvImport.tsx`](../src/compone
   - `type` and `article` are case-insensitive; `article` also accepts "not used". An invalid value counts as missing and is reported.
   - `article` and `plural` are ignored on non-nouns.
   - Fully blank lines are skipped silently.
-- **Duplicates:** matched on `spanish` only (trimmed, case-insensitive), against existing complete words and earlier accepted rows. Saved drafts are excluded. The first occurrence in the file wins.
+- **Duplicates:** uses the same `pairKey()` as manual add/edit: both `spanish` and `english` must match (trimmed, case-insensitive). Compared against saved complete words and earlier accepted complete rows; drafts are excluded from both. The same Spanish with a different English translation is allowed. The first complete occurrence in the file wins.
 - **Planning then writing:** `planCsvImport()` is pure and builds the whole plan in memory. The UI shows it as a preview, and only "Import" writes, via `importWords` (batches of 400, fresh review schedule). The same report is shown afterwards.
 - **Export** writes the same format, so an exported file can be imported again.
 

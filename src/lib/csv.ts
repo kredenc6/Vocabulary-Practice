@@ -39,7 +39,7 @@ export interface CsvImportPlan {
   words: WordInput[];
   completeCount: number;
   draftCount: number;
-  /** Skipped because the Spanish word already exists (or appeared earlier in the file). */
+  /** Skipped because the pair matches a saved complete word or an earlier complete row. */
   duplicates: CsvRowIssue[];
   /** Skipped rows. */
   errors: CsvRowIssue[];
@@ -51,14 +51,9 @@ export interface CsvImportPlan {
 
 export type CsvParseResult = { ok: true; plan: CsvImportPlan } | { ok: false; error: string };
 
-/** Duplicate key: the Spanish word only, trimmed and case-insensitive. */
-export function spanishKey(spanish: string): string {
-  return spanish.trim().toLowerCase();
-}
-
-/** Two-field duplicate key used by the manual add form. */
+/** Spanish/English duplicate key shared by adding, editing, and CSV import. */
 export function pairKey(pair: WordPairInput): string {
-  return `${spanishKey(pair.spanish)}\u0000${pair.english.trim().toLowerCase()}`;
+  return `${pair.spanish.trim().toLowerCase()}\u0000${pair.english.trim().toLowerCase()}`;
 }
 
 /**
@@ -160,7 +155,7 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
     invalidValues: [],
     warnings,
   };
-  const existingKeys = new Set(existing.filter(isComplete).map((w) => spanishKey(w.spanish)));
+  const existingKeys = new Set(existing.filter(isComplete).map(pairKey));
   const firstRowInFile = new Map<string, number>();
 
   rows.forEach((row, index) => {
@@ -180,17 +175,16 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
       return;
     }
 
-    const key = spanishKey(spanish);
+    const key = pairKey({ spanish, english });
     if (existingKeys.has(key)) {
-      plan.duplicates.push({ row: rowNumber, message: `"${spanish}" is already in your vocabulary` });
+      plan.duplicates.push({ row: rowNumber, message: `The pair "${spanish}" / "${english}" is already in your vocabulary` });
       return;
     }
     const firstRow = firstRowInFile.get(key);
     if (firstRow !== undefined) {
-      plan.duplicates.push({ row: rowNumber, message: `"${spanish}" already appears in row ${firstRow}` });
+      plan.duplicates.push({ row: rowNumber, message: `The pair "${spanish}" / "${english}" already appears in row ${firstRow}` });
       return;
     }
-    firstRowInFile.set(key, rowNumber);
 
     const typeValue = cell(row, 'type');
     const type = typeValue ? parseType(typeValue) : null;
@@ -216,8 +210,10 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
       ...(type === 'noun' && plural && { plural }),
     };
     plan.words.push(word);
-    if (isComplete(word)) plan.completeCount++;
-    else plan.draftCount++;
+    if (isComplete(word)) {
+      firstRowInFile.set(key, rowNumber);
+      plan.completeCount++;
+    } else plan.draftCount++;
   });
 
   return { ok: true, plan };

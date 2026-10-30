@@ -57,8 +57,9 @@ function FormatHelp() {
         {ARTICLES.map((a) => ARTICLE_LABELS[a]).join(', ')}. <strong>plural</strong>: nouns only, without article.
       </p>
       <p>
-        Rows without an English translation, a type, or a noun's article are imported as drafts. Words whose Spanish
-        already exists in the complete vocabulary are skipped; saved drafts are excluded from this check.
+        Rows without an English translation, a type, or a noun's article are imported as drafts. Spanish/English pairs
+        matching a complete vocabulary entry or an earlier complete row are skipped, ignoring capitalization and
+        leading/trailing spaces. Drafts are excluded from this check.
       </p>
     </>
   );
