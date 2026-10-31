@@ -53,7 +53,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
 
   const set = (patch: Partial<WordFormValues>) => onChange({ ...values, ...patch });
 
-  /** For changes to the Spanish word or the type: a noun's written article ("la casa") goes to the Article field. */
+  /** A written article ("la casa") moves to Article and selects the noun type. */
   const changeWord = (next: WordFormValues) => {
     const moved = moveLeadingArticle(next);
     if (moved) setArticleMove(moved.move);

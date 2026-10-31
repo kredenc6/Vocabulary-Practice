@@ -95,17 +95,16 @@ export interface ArticleMove {
 }
 
 /**
- * Nouns only: move an article written at the start of the Spanish field
- * ("la casa") to the Article field. The written article wins over a selected
- * one. Returns null when there's nothing to move.
+ * Move an article written at the start of the Spanish field ("la casa") to
+ * the Article field and select the noun type. The written article wins over
+ * a selected one. Returns null when there's nothing to move.
  */
 export function moveLeadingArticle(values: WordFormValues): { values: WordFormValues; move: ArticleMove } | null {
-  if (!nounFieldsApply(values.type)) return null;
   const split = splitLeadingArticle(values.spanish);
   if (!split) return null;
   const previous = values.article && values.article !== split.article ? values.article : undefined;
   return {
-    values: { ...values, spanish: split.rest, article: split.article },
+    values: { ...values, type: 'noun', spanish: split.rest, article: split.article },
     move: { article: split.article, ...(previous && { previous }) },
   };
 }
