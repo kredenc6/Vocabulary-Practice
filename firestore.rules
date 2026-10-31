@@ -20,7 +20,7 @@ service cloud.firestore {
     }
 
     function articles() {
-      return ['un', 'una', 'el', 'la', 'not_used'];
+      return ['un', 'una', 'el', 'la', 'unos', 'unas', 'los', 'las', 'not_used'];
     }
 
     function isForm(value) {

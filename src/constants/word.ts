@@ -22,7 +22,7 @@ export const WORD_TYPES = [
 export type WordType = (typeof WORD_TYPES)[number];
 
 /** `not_used` = a noun used without an article (different from "not filled in"). */
-export const ARTICLES = ['un', 'una', 'el', 'la', 'not_used'] as const;
+export const ARTICLES = ['un', 'una', 'el', 'la', 'unos', 'unas', 'los', 'las', 'not_used'] as const;
 
 export type Article = (typeof ARTICLES)[number];
 
@@ -43,6 +43,10 @@ export const ARTICLE_LABELS: Record<Article, string> = {
   una: 'una',
   el: 'el',
   la: 'la',
+  unos: 'unos',
+  unas: 'unas',
+  los: 'los',
+  las: 'las',
   not_used: 'not used',
 };
 

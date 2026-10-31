@@ -75,8 +75,8 @@ export function withType(values: WordFormValues, type: WordType | ''): WordFormV
   return nounFieldsApply(type) ? { ...values, type } : { ...values, type, article: '', plural: '' };
 }
 
-/** An article written before a noun: un/una/el/la, a space, then at least one more character. */
-const LEADING_ARTICLE = /^\s*(un|una|el|la)\s+(?=\S)/i;
+/** A singular or plural article before a noun, a space, then at least one more character. */
+const LEADING_ARTICLE = /^\s*(un|una|el|la|unos|unas|los|las)\s+(?=\S)/i;
 
 /**
  * "la casa" → { article: 'la', rest: 'casa' }. Matches only once something

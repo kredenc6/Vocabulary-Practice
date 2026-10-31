@@ -53,11 +53,11 @@ Saving a word through the shared form moves it between Vocabulary and Drafts aut
 Adding and editing use one shared form: [`WordForm`](../src/components/vocabulary/WordForm.tsx). Conversions live in [`src/lib/wordForm.ts`](../src/lib/wordForm.ts).
 
 - **Type-specific fields:** fields appear only for the type they belong to.
-  - Nouns: article and plural. The Spanish label reads "Spanish (without article)".
+  - Nouns: article and plural. The Spanish label reads "Spanish (without article)". For a plural-only noun, enter its plural form in Spanish, select a plural article, and leave the optional Plural field empty.
   - Adjectives: the forms switch and inputs, with a label like "Spanish (masculine singular)".
   - Verbs: the "Conjugations (optional)" field next to Type (an "Edit…" button).
   - With no type or another type, the label is just "Spanish". Changing the type away from noun clears the article and plural.
-- **Written article:** for nouns, an article typed at the start of the Spanish field (`un`, `una`, `el`, `la`, case-insensitive) is moved to the Article field once a character follows it and a space (`la c` → Spanish `c`, Article `la`). This happens while typing or pasting, and when the type is switched to noun with `la casa` already written. The written article wins over a selected one. A note says what happened: info "Article “la” moved…", or a warning "Article changed from “el” to “la”…" when it replaced a different article (including "not used"). The note hides once the article is changed by hand, the type changes, the Spanish field is emptied or the word is saved. Plural articles (`los`, `las`, `unos`, `unas`) are left as typed. Logic: `moveLeadingArticle` in [`src/lib/wordForm.ts`](../src/lib/wordForm.ts).
+- **Written article:** for nouns, an article typed at the start of the Spanish field (`un`, `una`, `el`, `la`, `unos`, `unas`, `los`, `las`, case-insensitive) is moved to the Article field once a character follows it and a space (`la c` → Spanish `c`, Article `la`). This happens while typing or pasting, and when the type is switched to noun with `la casa` already written. The written article wins over a selected one. A note says what happened: info "Article “la” moved…", or a warning "Article changed from “el” to “la”…" when it replaced a different article (including "not used"). The note hides once the article is changed by hand, the type changes, the Spanish field is emptied or the word is saved. Logic: `moveLeadingArticle` in [`src/lib/wordForm.ts`](../src/lib/wordForm.ts).
 - **Saving:** needs only a non-empty Spanish word. The button reads "Add word" / "Save" for complete words and "Add to drafts" / "Save as draft" otherwise. A hint lists the missing fields.
 - **On save:** values are trimmed. Article and plural are not saved for non-nouns. On edit, empty or non-applicable fields are removed with `deleteField()`.
 
@@ -168,7 +168,7 @@ Defined as `as const` arrays with derived union types (no enums). The UI uses th
 | Constant | Values | Label map |
 | --- | --- | --- |
 | `WORD_TYPES` → `WordType` | `noun`, `verb`, `adjective`, `adverb`, `pronoun`, `preposition`, `conjunction`, `interjection`, `phrase` | `WORD_TYPE_LABELS` |
-| `ARTICLES` → `Article` | `un`, `una`, `el`, `la`, `not_used` | `ARTICLE_LABELS` (`not_used` → "not used") |
+| `ARTICLES` → `Article` | `un`, `una`, `el`, `la`, `unos`, `unas`, `los`, `las`, `not_used` | `ARTICLE_LABELS` (`not_used` → "not used") |
 
 Type guards: `isWordType(value)` and `isArticle(value)`.
 
