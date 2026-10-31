@@ -2,7 +2,7 @@ import { useWordRow } from '../../hooks/useWordRow';
 import { MISSING_FIELD_TAGS, getMissingFields } from '../../lib/wordValidation';
 import type { VocabWord } from '../../types';
 import { SpanishWord } from '../SpanishWord';
-import { RowError, WordRowActions, WordRowEditor } from './WordRowParts';
+import { WordRowActions, WordRowEditor } from './WordRowParts';
 
 /** A draft in the Drafts list: word, translation (if any) and what is missing. */
 export function DraftRow({ word }: { word: VocabWord }) {
@@ -24,7 +24,6 @@ export function DraftRow({ word }: { word: VocabWord }) {
         ))}
       </span>
       <WordRowActions word={word} state={state} />
-      <RowError error={state.error} />
     </div>
   );
 }

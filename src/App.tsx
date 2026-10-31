@@ -4,6 +4,7 @@ import { WordsProvider } from './context/WordsProvider';
 import { LoginScreen } from './components/LoginScreen';
 import { AppShell } from './components/AppShell';
 import { Spinner } from './components/Spinner';
+import { ToastProvider } from './context/ToastProvider';
 
 function AuthGate() {
   const { user, initializing } = useAuth();
@@ -27,8 +28,10 @@ function AuthGate() {
 
 export default function App() {
   return (
-    <AuthProvider>
-      <AuthGate />
-    </AuthProvider>
+    <ToastProvider>
+      <AuthProvider>
+        <AuthGate />
+      </AuthProvider>
+    </ToastProvider>
   );
 }

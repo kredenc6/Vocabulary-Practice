@@ -1,5 +1,6 @@
 import { useRef, useState } from 'react';
 import { useWords } from '../../context/words';
+import { useToast } from '../../context/toasts';
 import { pairKey } from '../../lib/csv';
 import { EMPTY_WORD_FORM, formToWordInput, wordLabel } from '../../lib/wordForm';
 import type { WordFormValues } from '../../lib/wordForm';
@@ -9,7 +10,7 @@ import { WordForm } from './WordForm';
 export function AddWordForm() {
   const { practiceWords, addWord } = useWords();
   const [values, setValues] = useState<WordFormValues>(EMPTY_WORD_FORM);
-  const [message, setMessage] = useState<{ type: 'error' | 'success'; text: string } | null>(null);
+  const notify = useToast();
   const spanishRef = useRef<HTMLInputElement>(null);
 
   const handleSubmit = async () => {
@@ -18,22 +19,21 @@ export function AddWordForm() {
 
     const key = pairKey(input);
     if (practiceWords.some((w) => pairKey(w) === key)) {
-      setMessage({ type: 'error', text: `"${label}" is already in your vocabulary.` });
+      notify({ type: 'error', message: `"${label}" is already in your vocabulary.` });
       return;
     }
 
     setValues(EMPTY_WORD_FORM);
-    setMessage(null);
     spanishRef.current?.focus();
     try {
       await addWord(input);
-      setMessage({
+      notify({
         type: 'success',
-        text: isComplete(input) ? `Added "${label}".` : `Saved "${label}" to drafts.`,
+        message: isComplete(input) ? `Added "${label}".` : `Saved "${label}" to drafts.`,
       });
     } catch (err) {
       console.error(err);
-      setMessage({ type: 'error', text: 'Could not save the word. Please try again.' });
+      notify({ type: 'error', message: 'Could not save the word. Please try again.' });
     }
   };
 
@@ -50,11 +50,6 @@ export function AddWordForm() {
         submitLabels={{ complete: 'Add word', draft: 'Add to drafts' }}
         spanishRef={spanishRef}
       />
-      {message && (
-        <div className={`alert alert-${message.type}`} style={{ marginTop: '0.75rem' }} role="status">
-          {message.text}
-        </div>
-      )}
     </div>
   );
 }

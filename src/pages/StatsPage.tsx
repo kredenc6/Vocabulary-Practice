@@ -14,6 +14,7 @@ import {
   statusCounts,
 } from '../lib/stats';
 import { Spinner } from '../components/Spinner';
+import { ToastMessage } from '../components/ToastMessage';
 import { StatTiles } from '../components/stats/StatTiles';
 import type { Tile } from '../components/stats/StatTiles';
 import type { PracticeDirection, PracticeMode } from '../types';
@@ -78,9 +79,7 @@ export function StatsPage() {
       </div>
 
       {error && (
-        <div className="alert alert-error" role="alert">
-          {error}
-        </div>
+        <ToastMessage type="error" message={error} />
       )}
 
       <StatTiles tiles={tiles} />

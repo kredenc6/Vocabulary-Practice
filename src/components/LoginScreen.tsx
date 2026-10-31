@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useAuth } from '../context/auth';
+import { useToast } from '../context/toasts';
 
 function GoogleIcon() {
   return (
@@ -15,16 +16,15 @@ function GoogleIcon() {
 export function LoginScreen() {
   const { signIn } = useAuth();
   const [pending, setPending] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const notify = useToast();
 
   const handleSignIn = async () => {
     setPending(true);
-    setError(null);
     try {
       await signIn();
     } catch (err) {
       console.error(err);
-      setError('Sign-in failed. Make sure this domain is authorized in Firebase Authentication settings.');
+      notify({ type: 'error', message: 'Sign-in failed. Please try again.' });
     } finally {
       setPending(false);
     }
@@ -49,11 +49,6 @@ export function LoginScreen() {
           <GoogleIcon />
           {pending ? 'Signing in…' : 'Sign in with Google'}
         </button>
-        {error && (
-          <div className="alert alert-error" role="alert">
-            {error}
-          </div>
-        )}
       </main>
     </div>
   );

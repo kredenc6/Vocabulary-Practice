@@ -7,6 +7,8 @@ import { DraftsPage } from '../pages/DraftsPage';
 import { PracticePage } from '../pages/PracticePage';
 import { VocabularyPage } from '../pages/VocabularyPage';
 import { Spinner } from './Spinner';
+import { ToastMessage } from './ToastMessage';
+import { useToast } from '../context/toasts';
 
 // Statistics (and the charting library) load only when the tab is opened.
 const StatsPage = lazy(() => import('../pages/StatsPage').then((m) => ({ default: m.StatsPage })));
@@ -24,6 +26,7 @@ const TAB_LABELS: Record<Tab, string> = {
 function UserMenu() {
   const user = useUser();
   const { signOut } = useAuth();
+  const notify = useToast();
   const name = user.displayName ?? user.email ?? 'Account';
 
   return (
@@ -36,7 +39,11 @@ function UserMenu() {
         </span>
       )}
       <span className="user-name small">{name}</span>
-      <button type="button" className="btn btn-ghost btn-sm" onClick={() => void signOut()}>
+      <button
+        type="button"
+        className="btn btn-ghost btn-sm"
+        onClick={() => void signOut().catch(() => notify({ type: 'error', message: 'Could not sign out. Please try again.' }))}
+      >
         Sign out
       </button>
     </div>
@@ -91,9 +98,7 @@ export function AppShell() {
 
       <main className="container">
         {error && (
-          <div className="alert alert-error" role="alert" style={{ marginBottom: '1rem' }}>
-            {error}
-          </div>
+          <ToastMessage type="error" message={error} />
         )}
         {loading ? (
           <div className="center-screen">

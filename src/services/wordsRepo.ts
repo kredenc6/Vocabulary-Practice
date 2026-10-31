@@ -140,6 +140,7 @@ export function recordReview(
   word: VocabWord,
   outcome: AnswerOutcome,
   mode: PracticeMode,
+  onError?: (error: unknown) => void,
 ): SrsState {
   const now = Date.now();
   const next = applyReview(pickSrs(word), outcomeToQuality(outcome, mode), now);
@@ -154,6 +155,9 @@ export function recordReview(
   );
   // Don't block the UI on the server round-trip: the local cache is updated
   // immediately and the write is synced (also after going offline).
-  batch.commit().catch((error) => console.error('Failed to save review', error));
+  batch.commit().catch((error) => {
+    console.error('Failed to save review', error);
+    onError?.(error);
+  });
   return next;
 }

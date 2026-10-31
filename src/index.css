@@ -462,6 +462,60 @@ select {
 .alert-success { background: var(--good-soft); color: var(--good-text); }
 .alert-warn { background: var(--warn-soft); color: var(--warn-text); }
 
+/* App-wide transient notifications */
+.toast-stack {
+  position: fixed;
+  top: max(1rem, env(safe-area-inset-top));
+  right: max(1rem, env(safe-area-inset-right));
+  z-index: 100;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  width: min(380px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  pointer-events: none;
+}
+.toast {
+  --toast-color: var(--accent);
+  position: relative;
+  flex-shrink: 0;
+  overflow: hidden;
+  background: var(--surface);
+  border: 1px solid var(--border-strong);
+  border-left: 4px solid var(--toast-color);
+  border-radius: var(--radius-sm);
+  box-shadow: var(--shadow-lg);
+  pointer-events: auto;
+  animation: toast-appear 180ms ease-out;
+}
+.toast-success { --toast-color: var(--good-text); }
+.toast-error { --toast-color: var(--bad-text); }
+.toast-warn { --toast-color: var(--warn-text); }
+.toast-body { padding: 0.85rem 2.8rem 0.85rem 1rem; overflow-wrap: anywhere; }
+.toast-label { display: block; color: var(--toast-color); font-size: 0.8rem; margin-bottom: 0.2rem; }
+.toast-body p { font-size: 0.9rem; color: var(--text); }
+.toast-close { position: absolute; top: 0.35rem; right: 0.35rem; }
+.toast-action { margin: 0 1rem 0.85rem; }
+.toast-timer { height: 3px; background: var(--surface-2); }
+.toast-timer-bar {
+  height: 100%;
+  background: var(--toast-color);
+  transform-origin: left;
+  animation: toast-countdown linear forwards;
+}
+@keyframes toast-countdown { from { transform: scaleX(1); } to { transform: scaleX(0); } }
+@keyframes toast-appear { from { opacity: 0; transform: translateY(-6px); } to { opacity: 1; transform: translateY(0); } }
+@media (prefers-reduced-motion: reduce) { .toast { animation: none; } }
+@media (max-width: 600px) {
+  .toast-stack {
+    top: max(0.75rem, env(safe-area-inset-top));
+    right: 0.75rem;
+    left: 0.75rem;
+    width: auto;
+  }
+}
+
 .badge {
   display: inline-flex;
   align-items: center;

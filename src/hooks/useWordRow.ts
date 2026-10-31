@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import { useWords } from '../context/words';
+import { useToast } from '../context/toasts';
 import { pairKey } from '../lib/csv';
 import { formCompletenessFields, formToWordInput, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
 import { isComplete } from '../lib/wordValidation';
@@ -13,7 +14,6 @@ export interface WordRowState {
   setMode: (mode: WordRowMode) => void;
   values: WordFormValues;
   setValues: (values: WordFormValues) => void;
-  error: string | null;
   startEdit: () => void;
   save: () => Promise<void>;
   remove: () => Promise<void>;
@@ -23,7 +23,7 @@ export interface WordRowState {
 export interface WordRowOptions {
   /**
    * Called after a complete word was saved as a draft. Its row leaves the
-   * vocabulary list at that point, so the list shows the message instead.
+   * vocabulary list at that point, so the page can offer an Open drafts action.
    */
   onMovedToDrafts?: (label: string) => void;
 }
@@ -33,17 +33,15 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
   const { practiceWords, updateWord, deleteWord, resetProgress } = useWords();
   const [mode, setMode] = useState<WordRowMode>('view');
   const [values, setValues] = useState<WordFormValues>(() => wordToFormValues(word));
-  const [error, setError] = useState<string | null>(null);
+  const notify = useToast();
 
   return {
     mode,
     setMode,
     values,
     setValues,
-    error,
     startEdit() {
       setValues(wordToFormValues(word));
-      setError(null);
       setMode('edit');
     },
     // An incomplete word simply stays (or becomes) a draft – the status is derived,
@@ -53,32 +51,42 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
       const input = formToWordInput(values);
       const key = pairKey(input);
       if (practiceWords.some((w) => w.id !== word.id && pairKey(w) === key)) {
-        setError(`"${wordLabel(input)}" is already in your vocabulary.`);
+        notify({ type: 'error', message: `"${wordLabel(input)}" is already in your vocabulary.` });
         return;
       }
 
-      setError(null);
       const becomesDraft = isComplete(word) && !isComplete(formCompletenessFields(values));
       try {
         await updateWord(word.id, formToWordUpdate(values));
         setMode('view');
-        if (becomesDraft) onMovedToDrafts?.(wordLabel(formToWordInput(values)));
+        if (becomesDraft && onMovedToDrafts) {
+          onMovedToDrafts(wordLabel(input));
+        } else {
+          notify({
+            type: 'success',
+            message: isComplete(input) ? `Saved "${wordLabel(input)}".` : `Saved "${wordLabel(input)}" to drafts.`,
+          });
+        }
       } catch (err) {
         console.error(err);
-        setError('Could not save changes.');
+        notify({ type: 'error', message: 'Could not save changes.' });
       }
     },
     async remove() {
       try {
         await deleteWord(word.id);
+        notify({ type: 'success', message: `Deleted "${wordLabel(word)}".` });
       } catch (err) {
         console.error(err);
-        setError('Could not delete the word.');
+        notify({ type: 'error', message: 'Could not delete the word.' });
         setMode('view');
       }
     },
     resetProgress() {
-      void resetProgress(word.id);
+      void resetProgress(word.id).then(
+        () => notify({ type: 'success', message: `Reset progress for "${wordLabel(word)}".` }),
+        () => notify({ type: 'error', message: 'Could not reset learning progress.' }),
+      );
       setMode('view');
     },
   };

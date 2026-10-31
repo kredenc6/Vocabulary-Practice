@@ -7,6 +7,8 @@ import type { CsvImportPlan, CsvRowIssue } from '../../lib/csv';
 import { formatSpanish } from '../../lib/wordDisplay';
 import { isComplete } from '../../lib/wordValidation';
 import { InfoPopover } from '../InfoPopover';
+import { ToastMessage } from '../ToastMessage';
+import { useToast } from '../../context/toasts';
 
 type Status =
   | { name: 'idle' }
@@ -107,6 +109,7 @@ function ImportReport({ plan, done }: { plan: CsvImportPlan; done: boolean }) {
 
 export function CsvImport() {
   const { words, importWords } = useWords();
+  const notify = useToast();
   const [status, setStatus] = useState<Status>({ name: 'idle' });
   const [dragOver, setDragOver] = useState(false);
   const inputRef = useRef<HTMLInputElement>(null);
@@ -148,6 +151,10 @@ export function CsvImport() {
     try {
       await importWords(plan.words);
       setStatus({ name: 'done', fileName, plan });
+      notify({
+        type: 'success',
+        message: `Imported ${plan.words.length} word${plan.words.length === 1 ? '' : 's'}: ${plan.completeCount} complete, ${plan.draftCount} as drafts.`,
+      });
     } catch (err) {
       console.error(err);
       setStatus({
@@ -255,7 +262,7 @@ export function CsvImport() {
             hidden
           />
           {status.name === 'done' && (
-            <div className="alert alert-success" role="status">
+            <div>
               <p style={{ marginBottom: '0.35rem' }}>
                 <strong>{status.fileName}</strong>
               </p>
@@ -263,9 +270,7 @@ export function CsvImport() {
             </div>
           )}
           {status.name === 'error' && (
-            <div className="alert alert-error" role="alert">
-              {status.message}
-            </div>
+            <ToastMessage type="error" message={status.message} />
           )}
           <div className="row row-between">
             <button

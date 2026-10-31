@@ -45,7 +45,6 @@ export function WordRowEditor({ word, state }: { word: VocabWord; state: WordRow
           </button>
         )}
       </WordForm>
-      <RowError error={state.error} />
     </div>
   );
 }
@@ -83,11 +82,3 @@ export function WordRowActions({ word, state }: { word: VocabWord; state: WordRo
   );
 }
 
-export function RowError({ error }: { error: string | null }) {
-  if (!error) return null;
-  return (
-    <span className="small" style={{ color: 'var(--bad-text)', gridColumn: '1 / -1' }}>
-      {error}
-    </span>
-  );
-}

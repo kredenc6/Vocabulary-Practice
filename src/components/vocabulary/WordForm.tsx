@@ -13,9 +13,10 @@ import {
   verbFieldsApply,
   withType,
 } from '../../lib/wordForm';
-import type { ArticleMove, WordFormValues } from '../../lib/wordForm';
+import type { WordFormValues } from '../../lib/wordForm';
 import { MANDATORY_FIELD_LABELS, getMissingFields } from '../../lib/wordValidation';
 import { ConjugationDialog } from './ConjugationDialog';
+import { useToast } from '../../context/toasts';
 
 interface Props {
   values: WordFormValues;
@@ -42,10 +43,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   const discardedForms = isAdjective ? discardedAdjectiveForms(values.adjective) : [];
   const discardedKinds = [...new Set(discardedForms.map((entry) => entry.kind.label))].join(' / ');
   const [conjugationsOpen, setConjugationsOpen] = useState(false);
-  /** Last article moved from the Spanish field; shown while that article is still selected. */
-  const [articleMove, setArticleMove] = useState<ArticleMove | null>(null);
-  const articleNote =
-    articleMove && isNoun && values.article === articleMove.article && values.spanish.trim() !== '' ? articleMove : null;
+  const notify = useToast();
   const formCount = countForms(values.conjugations);
   const missing = getMissingFields(formCompletenessFields(values));
   const complete = missing.length === 0;
@@ -56,14 +54,21 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   /** A written article ("la casa") moves to Article and selects the noun type. */
   const changeWord = (next: WordFormValues) => {
     const moved = moveLeadingArticle(next);
-    if (moved) setArticleMove(moved.move);
+    if (moved) {
+      const { article, previous } = moved.move;
+      notify({
+        type: previous ? 'warn' : 'info',
+        message: previous
+          ? `Article changed from "${ARTICLE_LABELS[previous]}" to "${article}", as written in the Spanish field. Type set to noun.`
+          : `Article "${article}" moved from the Spanish field to Article. Type set to noun.`,
+      });
+    }
     onChange(moved ? moved.values : next);
   };
 
   const handleSubmit = (event: FormEvent) => {
     event.preventDefault();
     if (!canSubmit) return;
-    setArticleMove(null);
     onSubmit();
   };
 
@@ -168,7 +173,6 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
                 className="input"
                 value={values.article}
                 onChange={(e) => {
-                  setArticleMove(null);
                   set({ article: isArticle(e.target.value) ? e.target.value : '' });
                 }}
               >
@@ -194,14 +198,6 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
           </>
         )}
       </div>
-
-      {articleNote && (
-        <p className={`alert ${articleNote.previous ? 'alert-warn' : 'alert-info'}`} role="status">
-          {articleNote.previous
-            ? `Article changed from “${ARTICLE_LABELS[articleNote.previous]}” to “${articleNote.article}”, as written in the Spanish field.`
-            : `Article “${articleNote.article}” moved from the Spanish field to Article.`}
-        </p>
-      )}
 
       {/* Adjectives only: the optional other forms of the selected kind. */}
       {isAdjective && (

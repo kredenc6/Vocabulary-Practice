@@ -5,12 +5,14 @@ import { isComplete, isDraft } from '../lib/wordValidation';
 import type { VocabWord } from '../types';
 import { WordsContext } from './words';
 import type { WordsContextValue } from './words';
+import { useToast } from './toasts';
 
 /**
  * Subscribes once to the user's words and shares them with the whole app.
  * Render with `key={uid}` so state resets when the user changes.
  */
 export function WordsProvider({ uid, children }: { uid: string; children: ReactNode }) {
+  const notify = useToast();
   const [words, setWords] = useState<VocabWord[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -47,9 +49,11 @@ export function WordsProvider({ uid, children }: { uid: string; children: ReactN
       deleteWord: (id) => repo.deleteWord(uid, id),
       resetProgress: (id) => repo.resetWordProgress(uid, id),
       importWords: (inputs) => repo.importWords(uid, inputs),
-      recordReview: (word, outcome, mode) => repo.recordReview(uid, word, outcome, mode),
+      recordReview: (word, outcome, mode) => repo.recordReview(uid, word, outcome, mode, () => {
+        notify({ type: 'error', message: 'Could not save a practice answer. Its learning progress and daily statistics may not have been updated.' });
+      }),
     }),
-    [uid, words, practiceWords, draftWords, loading, error],
+    [uid, words, practiceWords, draftWords, loading, error, notify],
   );
 
   return <WordsContext.Provider value={value}>{children}</WordsContext.Provider>;

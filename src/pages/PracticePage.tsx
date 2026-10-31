@@ -1,6 +1,7 @@
 import { useState } from 'react';
 import { useUser } from '../context/auth';
 import { useWords } from '../context/words';
+import { useToast } from '../context/toasts';
 import { loadSettings, makeCard, saveSettings, shuffle } from '../lib/practice';
 import { isComplete } from '../lib/wordValidation';
 import { saveSession } from '../services/statsRepo';
@@ -21,6 +22,7 @@ interface Props {
 
 export function PracticePage({ active, onGoToVocabulary }: Props) {
   const user = useUser();
+  const notify = useToast();
   // Drafts never reach practice: everything below works on complete words only.
   const { words, practiceWords } = useWords();
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
@@ -55,7 +57,10 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
         modes: settings.modes,
         total: results.length,
         correct: results.filter((r) => r.outcome !== 'incorrect').length,
-      }).catch((err) => console.error('Failed to save session', err));
+      }).catch((err) => {
+        console.error('Failed to save session', err);
+        notify({ type: 'error', message: 'Could not save the session summary. Your individual answers are saved separately.' });
+      });
     }
     setPhase({ name: 'summary', results });
   };
