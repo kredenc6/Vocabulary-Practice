@@ -497,6 +497,21 @@ select {
 .toast-body p { font-size: 0.9rem; color: var(--text); }
 .toast-close { position: absolute; top: 0.35rem; right: 0.35rem; }
 .toast-action { margin: 0 1rem 0.85rem; }
+.toast-details {
+  width: min(560px, calc(100vw - 2rem));
+  max-height: calc(100dvh - 2rem);
+  overflow-y: auto;
+  padding: 1.25rem;
+  background: var(--surface);
+  color: var(--text);
+  border: 1px solid var(--border-strong);
+  border-radius: var(--radius);
+  box-shadow: var(--shadow-lg);
+}
+.toast-details::backdrop { background: rgba(0, 0, 0, 0.45); }
+.toast-details-header { display: flex; align-items: center; justify-content: space-between; gap: 1rem; }
+.toast-details-message { margin-top: 1rem; white-space: pre-wrap; overflow-wrap: anywhere; }
+.toast-details-actions { display: flex; justify-content: flex-end; flex-wrap: wrap; gap: 0.5rem; margin-top: 1.25rem; }
 .toast-timer { height: 3px; background: var(--surface-2); }
 .toast-timer-bar {
   height: 100%;

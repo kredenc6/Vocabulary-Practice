@@ -63,7 +63,9 @@ Adding and editing use one shared form: [`WordForm`](../src/components/vocabular
 
 ## Notifications
 
-Temporary success, error, and information messages use the app-wide `ToastProvider` and `useToast()` in `src/context`. `ToastMessage` adapts state-driven errors without repeating on ordinary rerenders or Strict Mode effect replay. Desktop notifications stack at the top right; narrow screens use the available width with side margins. Each toast has a close button and a shrinking timer bar, dismisses after five seconds, and survives tab navigation. Timers are cleared when toasts unmount.
+Temporary success, error, and information messages use the app-wide `ToastProvider` and `useToast()` in `src/context`. `ToastMessage` adapts state-driven errors without repeating on ordinary rerenders or Strict Mode effect replay. Desktop notifications stack at the top right; narrow screens use the available width with side margins. Each toast has a close button and a shrinking timer bar and survives tab navigation. Timers are cleared when toasts unmount.
+
+The message body has a maximum of 200 characters, including spaces and punctuation (Unicode code points). Labels and action buttons do not count. Dismissal timing is 5 seconds for 1–40 characters, 6 for 41–80, 7 for 81–120, 8 for 121–160, and 9 for 161–200. The timer bar uses the same duration. Empty/whitespace-only messages are ignored. Longer messages produce a short toast with a View details button; the full, untruncated text and any original action appear in a dialog that stays open until manually closed. The short toast's duration is based on its displayed body, not the hidden details. Timing and length helpers live in `src/lib/toast.ts`.
 
 Detailed CSV previews/reports, practice answer feedback, validation hints, practice setup guidance, and warnings about forms that will be discarded stay beside their controls. A word moved to drafts offers an Open drafts action in its success toast.
 
