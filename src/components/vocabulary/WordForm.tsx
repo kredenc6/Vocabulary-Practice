@@ -56,11 +56,12 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
     const moved = moveLeadingArticle(next);
     if (moved) {
       const { article, previous } = moved.move;
+      const typeNote = next.type !== 'noun' ? ' Type set to noun.' : '';
       notify({
         type: previous ? 'warn' : 'info',
         message: previous
-          ? `Article changed from "${ARTICLE_LABELS[previous]}" to "${article}", as written in the Spanish field. Type set to noun.`
-          : `Article "${article}" moved from the Spanish field to Article. Type set to noun.`,
+          ? `Article changed from "${ARTICLE_LABELS[previous]}" to "${article}", as written in the Spanish field.${typeNote}`
+          : `Article "${article}" moved from the Spanish field to Article.${typeNote}`,
       });
     }
     onChange(moved ? moved.values : next);
