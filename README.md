@@ -23,7 +23,7 @@ React 19, TypeScript, and Vite 6 (`react-ts` template); the Firebase JS SDK (Aut
 
 ### 1. Install dependencies
 
-Requires Node.js 20 or newer.
+Use Node.js 26.13.0 LTS (or a newer stable 26.x release). The project records this in `.nvmrc` and `package.json`; Netlify uses 26.13.0.
 
 ```bash
 npm install
