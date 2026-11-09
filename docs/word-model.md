@@ -81,11 +81,19 @@ Adjectives are either **four-form** or **two-form**, chosen with a switch in the
 - **Stored shape:** `adjective = { kind, ...forms }`. The kind is always stored for adjectives, so it records the switch even with no forms filled in. Forms are stored only when non-empty, and only those of the chosen kind.
 - **Defaults and completeness:** an adjective without an `adjective` field (e.g. saved before this existed) opens as four-form. The forms and the kind don't affect completeness.
 - **Cleaning:** `cleanAdjective()` is used by the form, the repository (before writing) and the converter (when reading). It keeps the valid kind plus that kind's trimmed forms of at most 300 characters. Updates replace the whole `adjective` map; an empty result is removed with `deleteField()`.
-- **Editing:** when type is `adjective`, the form shows the "Gender" switch next to Type ("Specific" = four-form, "Neutral" = two-form) and that kind's inputs. The Spanish field's label follows the kind ("masculine singular" / "singular").
+- **Editing:** when type is `adjective`, the form shows the "Gender" switch next to Type ("Gender-specific" = four-form, "Same for both genders" = two-form) and that kind's inputs. The Spanish field's label follows the kind ("masculine singular" / "singular").
   - Values typed for the other kind stay in the form while editing but aren't saved.
   - If the type is changed away from adjective, the forms are removed on save.
 - **Adding a kind or form:** add it to `ADJECTIVE_KINDS`. The types, form inputs, display and cleaning follow. Also update `isValidAdjective()` in `firestore.rules`.
 - CSV import/export doesn't include adjective forms (yet).
+
+### Automatic adjective forms
+
+Selecting adjective or changing its Spanish base suggests the gender pattern and other forms. The base must be masculine singular or the shared singular. Rules and curated exceptions live in `src/lib/adjectiveAutofill.ts`; this is a local suggestion helper, not a full dictionary. It handles regular `-o/-a`, known consonant and `-e` gender pairs, shared endings, accents, `z -> c`, and known invariant forms. For alternatives it suggests one standard plural (e.g. `marroquíes`, `naranjas`). Phrases, slash-separated alternatives and unrecognized patterns are left for manual entry.
+
+Only blank or session-generated fields are filled or replaced. Saved values, manual edits (including clearing a field), and explicit gender choices are preserved. Obsolete generated forms are cleared when the base or gender pattern changes; manual hidden forms retain the existing discard-on-save warning. A parent form reset starts a fresh autofill session. Nothing is automatically migrated in stored words.
+
+Regression checks (Node 26, no extra dependencies): `node --test tests/adjectiveAutofill.test.ts`.
 
 ## Verb conjugations
 

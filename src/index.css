@@ -951,6 +951,10 @@ kbd, .kbd {
 .segmented-option:has(input:checked) { background: var(--surface); color: var(--text); box-shadow: var(--shadow); }
 .segmented-option:has(input:focus-visible) { outline: 2px solid var(--accent); outline-offset: 1px; }
 
+/* Longer adjective labels must fit in narrow add/edit forms too. */
+.word-form .segmented { grid-auto-columns: minmax(0, 1fr); }
+.word-form .segmented-option { min-width: 0; white-space: normal; text-align: center; }
+
 /* A button in a form field (e.g. Conjugations next to Type): as wide as its content,
    as tall as the neighbouring inputs. */
 .field-btn { flex: 1; align-self: flex-start; }

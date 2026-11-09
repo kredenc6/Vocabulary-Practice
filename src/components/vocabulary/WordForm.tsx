@@ -1,8 +1,9 @@
-import { useId, useState } from 'react';
+import { useId, useRef, useState } from 'react';
 import type { FormEvent, ReactNode, Ref } from 'react';
 import { ADJECTIVE_KINDS, adjectiveKindConfig } from '../../constants/adjective';
 import type { AdjectiveFormKey } from '../../constants/adjective';
 import { discardedAdjectiveForms } from '../../lib/adjective';
+import { autofillAdjective, createAdjectiveAutofillSession, suggestAdjective } from '../../lib/adjectiveAutofill';
 import { ARTICLES, ARTICLE_LABELS, WORD_TYPES, WORD_TYPE_LABELS, isArticle, isWordType } from '../../constants/word';
 import { countForms } from '../../lib/conjugations';
 import {
@@ -48,8 +49,28 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   const missing = getMissingFields(formCompletenessFields(values));
   const complete = missing.length === 0;
   const canSubmit = values.spanish.trim() !== '';
+  const autofill = useRef({ values, session: createAdjectiveAutofillSession(isAdjective) });
+  const suggestion = isAdjective ? suggestAdjective(values.spanish) : undefined;
 
-  const set = (patch: Partial<WordFormValues>) => onChange({ ...values, ...patch });
+  // A parent reset or a different edited word starts a new ownership session.
+  const session = () => {
+    if (autofill.current.values !== values) {
+      autofill.current = { values, session: createAdjectiveAutofillSession(isAdjective) };
+    }
+    return autofill.current.session;
+  };
+  const emit = (next: WordFormValues) => {
+    session();
+    autofill.current.values = next;
+    onChange(next);
+  };
+  const set = (patch: Partial<WordFormValues>) => emit({ ...values, ...patch });
+  const fillAdjective = (next: WordFormValues) => {
+    if (!adjectiveFieldsApply(next.type)) return next;
+    const filled = autofillAdjective(next.spanish, next.adjective, session());
+    autofill.current.session = filled.session;
+    return { ...next, adjective: filled.adjective };
+  };
 
   /** A written article ("la casa") moves to Article and selects the noun type. */
   const changeWord = (next: WordFormValues) => {
@@ -64,7 +85,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
           : `Article "${article}" moved from the Spanish field to Article.${typeNote}`,
       });
     }
-    onChange(moved ? moved.values : next);
+    emit(fillAdjective(moved ? moved.values : next));
   };
 
   const handleSubmit = (event: FormEvent) => {
@@ -135,7 +156,10 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
                     type="radio"
                     name={adjectiveRadioName}
                     checked={values.adjective.kind === kind.key}
-                    onChange={() => set({ adjective: { ...values.adjective, kind: kind.key } })}
+                    onChange={() => {
+                      session().kindLocked = true;
+                      emit(fillAdjective({ ...values, adjective: { ...values.adjective, kind: kind.key } }));
+                    }}
                   />
                   {kind.label}
                 </label>
@@ -202,26 +226,40 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
 
       {/* Adjectives only: the optional other forms of the selected kind. */}
       {isAdjective && (
-        <div className="word-form-grid">
-          {adjectiveKind.forms.map((form) => (
-            <label key={form.key} className="field span-2">
-              <span className="field-label">{form.label} (optional)</span>
-              <input
-                className="input"
-                value={values.adjective[form.key as AdjectiveFormKey]}
-                onChange={(e) => set({ adjective: { ...values.adjective, [form.key]: e.target.value } })}
-                placeholder={form.placeholder}
-                lang="es"
-                maxLength={300}
-              />
-            </label>
-          ))}
-        </div>
+        <>
+          <p className="small muted" role="status">
+            {!values.spanish.trim()
+              ? 'Enter the masculine singular (or shared singular) to suggest the other forms.'
+              : !suggestion
+                ? 'No reliable suggestion for this word or phrase. Choose the gender pattern and enter the forms manually.'
+                : suggestion.kind !== values.adjective.kind
+                  ? 'The selected gender pattern differs from the suggestion. Check the pattern and forms.'
+                  : 'Forms are suggested automatically. Review them; your manual changes are kept.'}
+          </p>
+          <div className="word-form-grid">
+            {adjectiveKind.forms.map((form) => (
+              <label key={form.key} className="field span-2">
+                <span className="field-label">{form.label} (optional)</span>
+                <input
+                  className="input"
+                  value={values.adjective[form.key as AdjectiveFormKey]}
+                  onChange={(e) => {
+                    session().edited.add(form.key as AdjectiveFormKey);
+                    set({ adjective: { ...values.adjective, [form.key]: e.target.value } });
+                  }}
+                  placeholder={form.placeholder}
+                  lang="es"
+                  maxLength={300}
+                />
+              </label>
+            ))}
+          </div>
+        </>
       )}
       {discardedForms.length > 0 && (
         <p className="alert alert-warn" role="status">
           The {discardedKinds} {discardedForms.length === 1 ? 'form' : 'forms'}{' '}
-          will be deleted on save, since an adjective can't be both gender specific and neutral.
+          will be deleted on save, since only the selected gender pattern is saved.
         </p>
       )}
 
@@ -230,7 +268,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
           infinitive={values.spanish}
           conjugations={values.conjugations}
           onDone={(conjugations) => {
-            onChange({ ...values, conjugations });
+            emit({ ...values, conjugations });
             setConjugationsOpen(false);
           }}
           onCancel={() => setConjugationsOpen(false)}
