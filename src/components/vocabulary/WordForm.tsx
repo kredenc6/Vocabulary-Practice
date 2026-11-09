@@ -227,15 +227,6 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
       {/* Adjectives only: the optional other forms of the selected kind. */}
       {isAdjective && (
         <>
-          <p className="small muted" role="status">
-            {!values.spanish.trim()
-              ? 'Enter the masculine singular (or shared singular) to suggest the other forms.'
-              : !suggestion
-                ? 'No reliable suggestion for this word or phrase. Choose the gender pattern and enter the forms manually.'
-                : suggestion.kind !== values.adjective.kind
-                  ? 'The selected gender pattern differs from the suggestion. Check the pattern and forms.'
-                  : 'Forms are suggested automatically. Review them; your manual changes are kept.'}
-          </p>
           <div className="word-form-grid">
             {adjectiveKind.forms.map((form) => (
               <label key={form.key} className="field span-2">
@@ -254,6 +245,15 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
               </label>
             ))}
           </div>
+          <p className="small muted" role="status">
+            {!values.spanish.trim()
+              ? 'Enter the masculine singular (or shared singular) to suggest the other forms.'
+              : !suggestion
+                ? 'No reliable suggestion for this word or phrase. Choose the gender pattern and enter the forms manually.'
+                : suggestion.kind !== values.adjective.kind
+                  ? 'The selected gender pattern differs from the suggestion. Check the pattern and forms.'
+                  : 'Forms are suggested automatically. Review them; your manual changes are kept.'}
+          </p>
         </>
       )}
       {discardedForms.length > 0 && (

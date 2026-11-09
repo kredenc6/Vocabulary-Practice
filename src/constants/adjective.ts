@@ -31,7 +31,7 @@ export interface AdjectiveKindConfig {
 export const ADJECTIVE_KINDS = [
   {
     key: 'four',
-    label: 'Gender-specific',
+    label: 'Specific',
     example: 'bonito · bonita · bonitos · bonitas',
     baseLabel: 'masculine singular',
     basePlaceholder: 'bonito',
@@ -43,7 +43,7 @@ export const ADJECTIVE_KINDS = [
   },
   {
     key: 'two',
-    label: 'Same for both genders',
+    label: 'Shared',
     example: 'verde · verdes',
     baseLabel: 'singular',
     basePlaceholder: 'verde',
