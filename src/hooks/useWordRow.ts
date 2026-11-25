@@ -48,7 +48,6 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
       setValues(wordToFormValues(word));
       setMode('edit');
     },
-    // The lists update automatically when the saved word becomes a draft.
     async save() {
       // Block duplicate Spanish/English pairs for edits.
       const input = formToWordInput(values);
@@ -59,16 +58,20 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
       }
 
       const complete = isComplete(input);
-      const becomesDraft = isComplete(word) && !complete;
+      const editingDraft = !isComplete(word);
+      const becomesDraft = !editingDraft && !complete;
+      const label = wordLabel(input);
       try {
-        await updateWord(word.id, formToWordUpdate(values));
+        await updateWord(word.id, formToWordUpdate(values, editingDraft));
         setMode('view');
         if (becomesDraft && onMovedToDrafts) {
-          onMovedToDrafts(wordLabel(input));
+          onMovedToDrafts(label);
         } else {
           notify({
             type: 'success',
-            message: complete ? `Saved "${wordLabel(input)}".` : `Saved "${wordLabel(input)}" to drafts.`,
+            message: editingDraft && input.excludedFromPractice
+              ? `Saved "${label}" to Excluded.`
+              : complete ? `Saved "${label}".` : `Saved "${label}" to drafts.`,
           });
         }
       } catch (err) {

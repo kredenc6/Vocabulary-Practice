@@ -288,10 +288,13 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
             ? values.excludedFromPractice ? 'Will be saved in Excluded.' : 'Complete – ready to practice.'
             : `Missing: ${missing.map((f) => MANDATORY_FIELD_LABELS[f]).join(', ')}.${canSubmit && !movesToDrafts ? ' Will be saved as a draft.' : ''}`}
         </p>
-        <div className={allowExclusion ? 'word-form-add-actions' : 'row'}>
-          <button type="submit" className={`btn ${complete ? 'btn-primary' : 'btn-secondary'}`} disabled={!canSubmit}>
-            {complete ? submitLabels.complete : submitLabels.draft}
-          </button>
+        <div className="word-form-actions">
+          <div className="row">
+            <button type="submit" className={`btn ${complete ? 'btn-primary' : 'btn-secondary'}`} disabled={!canSubmit}>
+              {complete ? submitLabels.complete : submitLabels.draft}
+            </button>
+            {children}
+          </div>
           {allowExclusion && (
             <label className="word-exclusion-option">
               <input
@@ -303,7 +306,6 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
               Exclude from practice
             </label>
           )}
-          {children}
         </div>
       </div>
     </form>

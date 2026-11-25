@@ -45,7 +45,7 @@ export function wordToFormValues(word: VocabWordData): WordFormValues {
     type: word.type ?? '',
     article: word.article ?? '',
     plural: word.plural ?? '',
-    excludedFromPractice: word.excludedFromPractice === true,
+    excludedFromPractice: isComplete(word) && word.excludedFromPractice === true,
     conjugations: word.conjugations ?? {},
     adjective: adjectiveToFormState(word.adjective),
   };
@@ -151,8 +151,9 @@ export function formToWordInput(values: WordFormValues): WordInput {
 }
 
 /** For updating a word: fields that are empty or don't apply are cleared (null → deleteField()). */
-export function formToWordUpdate(values: WordFormValues): WordUpdate {
+export function formToWordUpdate(values: WordFormValues, allowExclusion = false): WordUpdate {
   const { spanish, english, type, article, plural, conjugations, adjective } = normalized(values);
+  const complete = isComplete({ spanish, english, type, article });
   return {
     spanish,
     english,
@@ -161,6 +162,6 @@ export function formToWordUpdate(values: WordFormValues): WordUpdate {
     plural: plural ?? null,
     conjugations: conjugations ?? null,
     adjective: adjective ?? null,
-    ...(!isComplete({ spanish, english, type, article }) && { excludedFromPractice: false }),
+    ...((allowExclusion || !complete) && { excludedFromPractice: complete && values.excludedFromPractice }),
   };
 }

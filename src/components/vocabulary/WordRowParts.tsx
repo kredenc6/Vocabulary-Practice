@@ -38,6 +38,7 @@ export function WordRowEditor({ word, state }: { word: VocabWord; state: WordRow
         onChange={state.setValues}
         onSubmit={state.save}
         submitLabels={{ complete: 'Save', draft: 'Save as draft' }}
+        allowExclusion={!isComplete(word)}
         autoFocus
       >
         <button type="button" className="btn btn-ghost" onClick={() => state.setMode('view')}>
