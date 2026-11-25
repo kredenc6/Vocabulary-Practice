@@ -4,6 +4,14 @@ import { isComplete } from '../../lib/wordValidation';
 import type { VocabWord } from '../../types';
 import { WordForm } from './WordForm';
 
+function PracticeIcon({ resume }: { resume: boolean }) {
+  return (
+    <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
+      <path d={resume ? 'M8 5v14l11-7Z' : 'M9 5v14m6-14v14'} strokeLinecap="round" strokeLinejoin="round" />
+    </svg>
+  );
+}
+
 function EditIcon() {
   return (
     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" aria-hidden="true">
@@ -52,7 +60,8 @@ export function WordRowEditor({ word, state }: { word: VocabWord; state: WordRow
 
 /** Row actions, with the inline "Delete / Keep" confirmation. */
 export function WordRowActions({ word, state }: { word: VocabWord; state: WordRowState }) {
-  const practiceAction = word.excludedFromPractice ? 'Return to practice' : 'Exclude from practice';
+  const isExcluded = word.excludedFromPractice === true;
+  const practiceAction = isExcluded ? 'Return to practice' : 'Exclude from practice';
   return (
     <span className="word-actions">
       {state.mode === 'confirm-delete' ? (
@@ -69,12 +78,13 @@ export function WordRowActions({ word, state }: { word: VocabWord; state: WordRo
           {isComplete(word) && (
             <button
               type="button"
-              className="btn btn-ghost btn-sm"
+              className="icon-btn"
               aria-label={`${practiceAction} for ${formatSpanish(word)}`}
+              title={practiceAction}
               disabled={state.changingPracticeExclusion}
               onClick={state.togglePracticeExclusion}
             >
-              {practiceAction}
+              <PracticeIcon resume={isExcluded} />
             </button>
           )}
           <button type="button" className="icon-btn" onClick={state.startEdit} aria-label={`Edit ${formatSpanish(word)}`} title="Edit">

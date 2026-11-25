@@ -365,8 +365,9 @@ select {
   place-items: center;
 }
 
-.icon-btn:hover { background: var(--surface-2); color: var(--text); }
-.icon-btn.danger:hover { color: var(--bad-text); }
+.icon-btn:hover:not(:disabled) { background: var(--surface-2); color: var(--text); }
+.icon-btn.danger:hover:not(:disabled) { color: var(--bad-text); }
+.icon-btn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 /* ==========================================================================
    Forms
@@ -875,7 +876,7 @@ kbd, .kbd {
 .toolbar select.input { flex: 0 0 auto; }
 
 .word-list {
-  --word-actions-width: 12.5rem;
+  --word-actions-width: 7rem;
   display: flex;
   flex-direction: column;
 }
@@ -934,10 +935,6 @@ kbd, .kbd {
   .word-row.draft-row, .word-row.excluded-row { grid-template-columns: minmax(0, 1fr) auto; }
   .word-row.excluded-row { grid-template-areas: 'es actions' 'en actions'; }
   .word-row.editing { display: block; }
-}
-
-@media (max-width: 480px) {
-  .word-actions { max-width: 9.5rem; }
 }
 
 /* Compact neutral segmented control (e.g. adjective four-form / two-form next to Type).
