@@ -186,7 +186,7 @@ Defined as `as const` arrays with derived union types (no enums). The UI uses th
 
 | Constant | Values | Label map |
 | --- | --- | --- |
-| `WORD_TYPES` → `WordType` | `noun`, `verb`, `adjective`, `adverb`, `pronoun`, `preposition`, `conjunction`, `interjection`, `phrase` | `WORD_TYPE_LABELS` |
+| `WORD_TYPES` → `WordType` | `noun`, `verb`, `adjective`, `numeral`, `adverb`, `pronoun`, `preposition`, `conjunction`, `interjection`, `phrase` | `WORD_TYPE_LABELS` |
 | `ARTICLES` → `Article` | `un`, `una`, `el`, `la`, `unos`, `unas`, `los`, `las`, `not_used` | `ARTICLE_LABELS` (`not_used` → "not used") |
 
 Type guards: `isWordType(value)` and `isArticle(value)`.

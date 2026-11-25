@@ -16,7 +16,7 @@ service cloud.firestore {
     // Keep these lists in sync with src/constants/word.ts.
     function wordTypes() {
       return ['noun', 'verb', 'adjective', 'adverb', 'pronoun', 'preposition',
-              'conjunction', 'interjection', 'phrase'];
+              'conjunction', 'interjection', 'phrase', 'numeral'];
     }
 
     function articles() {
