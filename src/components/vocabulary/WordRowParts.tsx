@@ -29,7 +29,23 @@ function TrashIcon() {
   );
 }
 
-/** A row in edit mode: the shared word form plus Cancel / Reset progress. */
+export function ResetProgressIconButton({ word, state }: {
+  word: VocabWord;
+  state: WordRowState;
+}) {
+  if (word.lastReviewedAt === null) return <span className="reset-icon-slot" aria-hidden="true" />;
+  return (
+    <button type="button" className="icon-btn reset-icon-slot" title="Reset learning progress"
+      aria-label={`Reset learning progress for ${formatSpanish(word)}`}
+      onClick={() => state.setMode('confirm-reset')}>
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor"
+        strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" aria-hidden="true">
+        <path d="M3 4v6h6 M3.8 10a8.5 8.5 0 1 1 .4 5" />
+      </svg>
+    </button>
+  );
+}
+
 export function WordRowEditor({ word, state }: { word: VocabWord; state: WordRowState }) {
   return (
     <div className="word-row editing">
@@ -44,31 +60,21 @@ export function WordRowEditor({ word, state }: { word: VocabWord; state: WordRow
         <button type="button" className="btn btn-ghost" onClick={() => state.setMode('view')}>
           Cancel
         </button>
-        {word.lastReviewedAt !== null && (
-          <button
-            type="button"
-            className="btn btn-ghost"
-            title="Reset learning progress to “new”"
-            onClick={state.resetProgress}
-          >
-            Reset progress
-          </button>
-        )}
       </WordForm>
     </div>
   );
 }
 
-/** Row actions, with the inline "Delete / Keep" confirmation. */
 export function WordRowActions({ word, state }: { word: VocabWord; state: WordRowState }) {
   const isExcluded = word.excludedFromPractice === true;
   const practiceAction = isExcluded ? 'Return to practice' : 'Exclude from practice';
   return (
     <span className="word-actions">
-      {state.mode === 'confirm-delete' ? (
+      {state.mode === 'confirm-delete' || state.mode === 'confirm-reset' ? (
         <span className="confirm-inline">
-          <button type="button" className="btn btn-danger btn-sm" onClick={state.remove} autoFocus>
-            Delete
+          <button type="button" className="btn btn-danger btn-sm"
+            onClick={state.mode === 'confirm-reset' ? state.resetProgress : state.remove} autoFocus>
+            {state.mode === 'confirm-reset' ? 'Reset' : 'Delete'}
           </button>
           <button type="button" className="btn btn-ghost btn-sm" onClick={() => state.setMode('view')}>
             Keep
@@ -76,6 +82,7 @@ export function WordRowActions({ word, state }: { word: VocabWord; state: WordRo
         </span>
       ) : (
         <>
+          {isExcluded && isComplete(word) && <ResetProgressIconButton word={word} state={state} />}
           {isComplete(word) && (
             <button
               type="button"

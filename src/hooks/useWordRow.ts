@@ -8,7 +8,7 @@ import { isComplete } from '../lib/wordValidation';
 import type { WordFormValues } from '../lib/wordForm';
 import type { VocabWord } from '../types';
 
-export type WordRowMode = 'view' | 'edit' | 'confirm-delete';
+export type WordRowMode = 'view' | 'edit' | 'confirm-delete' | 'confirm-reset';
 
 export interface WordRowState {
   mode: WordRowMode;

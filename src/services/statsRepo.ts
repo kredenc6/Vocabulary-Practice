@@ -6,18 +6,20 @@ import { WORD_SCHEMA_VERSION } from '../constants/word';
 import { initialSrsState } from '../lib/srs';
 import type { DailyStat, PracticeSessionData, PracticeSessionRecord } from '../types';
 
-export async function resetAllStatistics(uid: string): Promise<void> {
+export type StatisticsScope = 'sessions' | 'daily' | 'words';
+
+export async function resetStatistics(uid: string, scopes: readonly StatisticsScope[]): Promise<void> {
   const [words, sessions, days] = await Promise.all([
-    getDocsFromServer(wordsCol(uid)),
-    getDocsFromServer(sessionsCol(uid)),
-    getDocsFromServer(dailyStatsCol(uid)),
+    scopes.includes('words') ? getDocsFromServer(wordsCol(uid)) : null,
+    scopes.includes('sessions') ? getDocsFromServer(sessionsCol(uid)) : null,
+    scopes.includes('daily') ? getDocsFromServer(dailyStatsCol(uid)) : null,
   ]);
   const now = Date.now();
   const progress = { ...initialSrsState(now), updatedAt: now, schemaVersion: WORD_SCHEMA_VERSION };
   const writes: ((batch: WriteBatch) => void)[] = [];
-  for (const word of words.docs) writes.push(batch => batch.update(word.ref, progress));
-  for (const session of sessions.docs) writes.push(batch => batch.delete(session.ref));
-  for (const day of days.docs) writes.push(batch => batch.delete(day.ref));
+  for (const word of words?.docs ?? []) writes.push(batch => batch.update(word.ref, progress));
+  for (const session of sessions?.docs ?? []) writes.push(batch => batch.delete(session.ref));
+  for (const day of days?.docs ?? []) writes.push(batch => batch.delete(day.ref));
 
   const batchSize = 400;
   for (let start = 0; start < writes.length; start += batchSize) {

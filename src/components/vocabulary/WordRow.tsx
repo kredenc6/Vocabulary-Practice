@@ -3,7 +3,7 @@ import { formatDue } from '../../lib/dates';
 import { STATUS_LABELS, wordStatus } from '../../lib/srs';
 import type { VocabWord, WordStatus } from '../../types';
 import { SpanishWord } from '../SpanishWord';
-import { WordRowActions, WordRowEditor } from './WordRowParts';
+import { ResetProgressIconButton, WordRowActions, WordRowEditor } from './WordRowParts';
 
 export function StatusBadge({ status }: { status: WordStatus }) {
   return (
@@ -36,8 +36,11 @@ export function WordRow({ word, now, onMovedToDrafts }: Props) {
       <span className="word-status">
         <StatusBadge status={status} />
       </span>
-      <span className="word-due small muted" title={new Date(word.nextReviewDate).toLocaleString()}>
-        {status === 'new' ? 'Not practiced' : formatDue(word.nextReviewDate, now)}
+      <span className="word-due small muted">
+        <span title={new Date(word.nextReviewDate).toLocaleString()}>
+          {status === 'new' ? 'Not practiced' : formatDue(word.nextReviewDate, now)}
+        </span>
+        <ResetProgressIconButton word={word} state={state} />
       </span>
       <WordRowActions word={word} state={state} />
     </div>
