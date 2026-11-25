@@ -277,17 +277,6 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
         />
       )}
 
-      {allowExclusion && (
-        <label className="word-exclusion-option">
-          <input
-            type="checkbox"
-            checked={complete && values.excludedFromPractice}
-            disabled={!complete}
-            onChange={(event) => set({ excludedFromPractice: event.target.checked })}
-          />
-          Exclude from practice
-        </label>
-      )}
       {movesToDrafts && (
         <p className="alert alert-warn" role="status">
           Saving will move this word from Excluded to Drafts.
@@ -299,10 +288,21 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
             ? values.excludedFromPractice ? 'Will be saved in Excluded.' : 'Complete – ready to practice.'
             : `Missing: ${missing.map((f) => MANDATORY_FIELD_LABELS[f]).join(', ')}.${canSubmit && !movesToDrafts ? ' Will be saved as a draft.' : ''}`}
         </p>
-        <div className="row">
+        <div className={allowExclusion ? 'word-form-add-actions' : 'row'}>
           <button type="submit" className={`btn ${complete ? 'btn-primary' : 'btn-secondary'}`} disabled={!canSubmit}>
             {complete ? submitLabels.complete : submitLabels.draft}
           </button>
+          {allowExclusion && (
+            <label className="word-exclusion-option">
+              <input
+                type="checkbox"
+                checked={complete && values.excludedFromPractice}
+                disabled={!complete}
+                onChange={(event) => set({ excludedFromPractice: event.target.checked })}
+              />
+              Exclude from practice
+            </label>
+          )}
           {children}
         </div>
       </div>
