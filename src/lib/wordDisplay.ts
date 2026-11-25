@@ -9,3 +9,8 @@ export function formatSpanish(word: Pick<VocabWordData, 'spanish' | 'article'>):
   const spanish = word.spanish.trim();
   return word.article && word.article !== 'not_used' ? `${word.article} ${spanish}` : spanish;
 }
+
+/** The tab where a complete word is listed. */
+export function completeWordTab(word: Pick<VocabWordData, 'excludedFromPractice'>): 'Vocabulary' | 'Excluded' {
+  return word.excludedFromPractice ? 'Excluded' : 'Vocabulary';
+}

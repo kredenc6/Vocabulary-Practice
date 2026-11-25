@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { useWords } from '../context/words';
 import { useToast } from '../context/toasts';
 import { pairKey } from '../lib/csv';
+import { completeWordTab } from '../lib/wordDisplay';
 import { formToWordInput, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
 import { isComplete } from '../lib/wordValidation';
 import type { WordFormValues } from '../lib/wordForm';
@@ -52,8 +53,9 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
       // Block duplicate Spanish/English pairs for edits.
       const input = formToWordInput(values);
       const key = pairKey(input);
-      if (completeWords.some((w) => w.id !== word.id && pairKey(w) === key)) {
-        notify({ type: 'error', message: `"${wordLabel(input)}" is already in your vocabulary.` });
+      const duplicate = completeWords.find((w) => w.id !== word.id && pairKey(w) === key);
+      if (duplicate) {
+        notify({ type: 'error', message: `"${wordLabel(input)}" is already in the ${completeWordTab(duplicate)} tab.` });
         return;
       }
 

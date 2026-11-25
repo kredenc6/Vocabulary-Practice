@@ -2,6 +2,7 @@ import { useRef, useState } from 'react';
 import { useWords } from '../../context/words';
 import { useToast } from '../../context/toasts';
 import { pairKey } from '../../lib/csv';
+import { completeWordTab } from '../../lib/wordDisplay';
 import { EMPTY_WORD_FORM, formToWordInput, wordLabel } from '../../lib/wordForm';
 import type { WordFormValues } from '../../lib/wordForm';
 import { isComplete } from '../../lib/wordValidation';
@@ -18,8 +19,9 @@ export function AddWordForm() {
     const label = wordLabel(input);
 
     const key = pairKey(input);
-    if (completeWords.some((w) => pairKey(w) === key)) {
-      notify({ type: 'error', message: `"${label}" is already in your vocabulary.` });
+    const duplicate = completeWords.find((w) => pairKey(w) === key);
+    if (duplicate) {
+      notify({ type: 'error', message: `"${label}" is already in the ${completeWordTab(duplicate)} tab.` });
       return;
     }
 

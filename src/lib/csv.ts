@@ -9,6 +9,7 @@ import Papa from 'papaparse';
 import { isArticle, isWordType } from '../constants/word';
 import type { Article, WordType } from '../constants/word';
 import type { VocabWord, WordInput, WordPairInput } from '../types';
+import { completeWordTab } from './wordDisplay';
 import { isComplete } from './wordValidation';
 
 export const CSV_DELIMITER = '|';
@@ -155,7 +156,7 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
     invalidValues: [],
     warnings,
   };
-  const existingKeys = new Set(existing.filter(isComplete).map(pairKey));
+  const existingByKey = new Map(existing.filter(isComplete).map((word) => [pairKey(word), word]));
   const firstRowInFile = new Map<string, number>();
 
   rows.forEach((row, index) => {
@@ -176,8 +177,12 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
     }
 
     const key = pairKey({ spanish, english });
-    if (existingKeys.has(key)) {
-      plan.duplicates.push({ row: rowNumber, message: `The pair "${spanish}" / "${english}" is already in your vocabulary` });
+    const duplicate = existingByKey.get(key);
+    if (duplicate) {
+      plan.duplicates.push({
+        row: rowNumber,
+        message: `The pair "${spanish}" / "${english}" is already in the ${completeWordTab(duplicate)} tab`,
+      });
       return;
     }
     const firstRow = firstRowInFile.get(key);
