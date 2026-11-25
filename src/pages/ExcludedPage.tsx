@@ -1,8 +1,11 @@
+import { useMemo, useState } from 'react';
 import { SpanishWord } from '../components/SpanishWord';
 import { WordRowActions, WordRowEditor } from '../components/vocabulary/WordRowParts';
+import { WordSearchInput } from '../components/vocabulary/WordSearchInput';
 import { useWords } from '../context/words';
 import { useToast } from '../context/toasts';
 import { useWordRow } from '../hooks/useWordRow';
+import { createWordSearch } from '../lib/wordSearch';
 import type { VocabWord } from '../types';
 
 interface Props {
@@ -32,6 +35,8 @@ function ExcludedRow({ word, onGoToDrafts }: { word: VocabWord; onGoToDrafts: ()
 
 export function ExcludedPage({ onGoToVocabulary, onGoToDrafts }: Props) {
   const { excludedWords } = useWords();
+  const [search, setSearch] = useState('');
+  const filtered = useMemo(() => excludedWords.filter(createWordSearch(search)), [excludedWords, search]);
 
   return (
     <div className="stack">
@@ -42,14 +47,21 @@ export function ExcludedPage({ onGoToVocabulary, onGoToDrafts }: Props) {
         </div>
       </div>
       <div className="card">
-        {excludedWords.length ? (
+        <div className="toolbar">
+          <WordSearchInput value={search} onChange={setSearch} />
+        </div>
+        {filtered.length > 0 ? (
           <div className="word-list">
             <div className="word-row excluded-row word-row-head" aria-hidden="true">
               <span>Spanish</span>
               <span>English</span>
               <span />
             </div>
-            {excludedWords.map((word) => <ExcludedRow key={word.id} word={word} onGoToDrafts={onGoToDrafts} />)}
+            {filtered.map((word) => <ExcludedRow key={word.id} word={word} onGoToDrafts={onGoToDrafts} />)}
+          </div>
+        ) : excludedWords.length > 0 ? (
+          <div className="empty-state">
+            <p>No words match your search.</p>
           </div>
         ) : (
           <div className="empty-state">

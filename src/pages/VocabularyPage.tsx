@@ -1,14 +1,13 @@
 import { useMemo, useState } from 'react';
 import { useWords } from '../context/words';
 import { useToast } from '../context/toasts';
-import { normalize, stripAccents } from '../lib/answerCheck';
-import { adjectiveFormList } from '../lib/adjective';
-import { formatSpanish } from '../lib/wordDisplay';
 import { STATUS_LABELS, isDue, wordStatus } from '../lib/srs';
+import { createWordSearch } from '../lib/wordSearch';
 import type { VocabWord, WordStatus } from '../types';
 import { AddWordForm } from '../components/vocabulary/AddWordForm';
 import { CsvImport } from '../components/vocabulary/CsvImport';
 import { WordRow } from '../components/vocabulary/WordRow';
+import { WordSearchInput } from '../components/vocabulary/WordSearchInput';
 
 type StatusFilter = 'all' | 'due' | WordStatus;
 type SortKey = 'newest' | 'spanish' | 'english' | 'due';
@@ -21,8 +20,6 @@ const SORTERS: Record<SortKey, (a: VocabWord, b: VocabWord) => number> = {
   english: (a, b) => a.english.localeCompare(b.english, 'en'),
   due: (a, b) => a.nextReviewDate - b.nextReviewDate,
 };
-
-const searchable = (text: string) => stripAccents(normalize(text));
 
 interface Props {
   onGoToDrafts: () => void;
@@ -42,17 +39,11 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
   const now = Date.now();
   const filtered = useMemo(() => {
     const at = Date.now();
-    const q = searchable(search);
+    const matchesSearch = createWordSearch(search);
     const result = words.filter((w) => {
       if (filter === 'due' && !isDue(w, at)) return false;
       if (filter !== 'all' && filter !== 'due' && wordStatus(w) !== filter) return false;
-      return (
-        !q ||
-        searchable(formatSpanish(w)).includes(q) ||
-        searchable(w.plural ?? '').includes(q) ||
-        adjectiveFormList(w.adjective).some((f) => searchable(f.value).includes(q)) ||
-        searchable(w.english).includes(q)
-      );
+      return matchesSearch(w);
     });
     return result.sort(SORTERS[sort]);
   }, [words, search, filter, sort]);
@@ -92,16 +83,12 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
 
       <div className="card">
         <div className="toolbar">
-          <input
-            className="input"
-            type="search"
-            placeholder="Search Spanish or English…"
+          <WordSearchInput
             value={search}
-            onChange={(e) => {
-              setSearch(e.target.value);
+            onChange={(value) => {
+              setSearch(value);
               setVisible(PAGE_SIZE);
             }}
-            aria-label="Search words"
           />
           <select
             className="input"
