@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import type { FormEvent } from 'react';
+import type { SubmitEvent } from 'react';
 import { checkTypedAnswer } from '../../lib/answerCheck';
 import { LANGUAGE_NAMES, answerSide, answerText } from '../../lib/practice';
 import type { AnswerOutcome, PracticeCard } from '../../types';
@@ -24,7 +24,7 @@ export function TypedAnswerView({ card, outcome, onAnswer }: Props) {
   const answered = outcome !== null;
   const targetLang = LANGUAGE_NAMES[answerSide(card.direction)];
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (answered || !value.trim()) return;
     const result = checkTypedAnswer(value, answerText(card));

@@ -1,5 +1,5 @@
 import { useId, useRef, useState } from 'react';
-import type { FormEvent, ReactNode, Ref } from 'react';
+import type { ReactNode, Ref, SubmitEvent } from 'react';
 import { ADJECTIVE_KINDS, adjectiveKindConfig } from '../../constants/adjective';
 import type { AdjectiveFormKey } from '../../constants/adjective';
 import { discardedAdjectiveForms } from '../../lib/adjective';
@@ -90,7 +90,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
     emit(fillAdjective(moved ? moved.values : next));
   };
 
-  const handleSubmit = (event: FormEvent) => {
+  const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
     onSubmit();
