@@ -1,7 +1,31 @@
-import { doc, limit, onSnapshot, orderBy, query, setDoc } from 'firebase/firestore';
-import type { Unsubscribe } from 'firebase/firestore';
-import { dailyStatsCol, sessionsCol } from '../firebase/paths';
+import { doc, getDocsFromServer, limit, onSnapshot, orderBy, query, setDoc, writeBatch } from 'firebase/firestore';
+import type { Unsubscribe, WriteBatch } from 'firebase/firestore';
+import { db } from '../firebase/firebase';
+import { dailyStatsCol, sessionsCol, wordsCol } from '../firebase/paths';
+import { WORD_SCHEMA_VERSION } from '../constants/word';
+import { initialSrsState } from '../lib/srs';
 import type { DailyStat, PracticeSessionData, PracticeSessionRecord } from '../types';
+
+export async function resetAllStatistics(uid: string): Promise<void> {
+  const [words, sessions, days] = await Promise.all([
+    getDocsFromServer(wordsCol(uid)),
+    getDocsFromServer(sessionsCol(uid)),
+    getDocsFromServer(dailyStatsCol(uid)),
+  ]);
+  const now = Date.now();
+  const progress = { ...initialSrsState(now), updatedAt: now, schemaVersion: WORD_SCHEMA_VERSION };
+  const writes: ((batch: WriteBatch) => void)[] = [];
+  for (const word of words.docs) writes.push(batch => batch.update(word.ref, progress));
+  for (const session of sessions.docs) writes.push(batch => batch.delete(session.ref));
+  for (const day of days.docs) writes.push(batch => batch.delete(day.ref));
+
+  const batchSize = 400;
+  for (let start = 0; start < writes.length; start += batchSize) {
+    const batch = writeBatch(db);
+    for (const write of writes.slice(start, start + batchSize)) write(batch);
+    await batch.commit();
+  }
+}
 
 export async function saveSession(uid: string, data: PracticeSessionData): Promise<void> {
   const ref = doc(sessionsCol(uid));

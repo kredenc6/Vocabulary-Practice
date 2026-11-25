@@ -16,6 +16,7 @@ import {
 import { Spinner } from '../components/Spinner';
 import { ToastMessage } from '../components/ToastMessage';
 import { StatTiles } from '../components/stats/StatTiles';
+import { ResetStatisticsButton } from '../components/stats/ResetStatisticsButton';
 import type { Tile } from '../components/stats/StatTiles';
 import type { PracticeDirection, PracticeMode } from '../types';
 import { StatusBreakdown } from '../components/stats/StatusBreakdown';
@@ -165,6 +166,7 @@ export function StatsPage() {
           </div>
         </>
       )}
+      <ResetStatisticsButton uid={user.uid} />
     </div>
   );
 }

@@ -1000,7 +1000,8 @@ kbd, .kbd {
 }
 
 /* Conjugation editor (native <dialog>) */
-.conj-dialog {
+.conj-dialog,
+.reset-stats-dialog {
   width: min(40rem, calc(100vw - 2rem));
   max-height: min(44rem, calc(100dvh - 2rem));
   padding: 0;
@@ -1012,7 +1013,15 @@ kbd, .kbd {
 }
 
 .conj-dialog[open] { display: flex; flex-direction: column; }
-.conj-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+.conj-dialog::backdrop,
+.reset-stats-dialog::backdrop { background: rgba(0, 0, 0, 0.45); }
+
+.reset-stats-dialog {
+  width: min(28rem, calc(100vw - 2rem));
+  margin: auto;
+  padding: 1.25rem;
+}
+.reset-stats-dialog .row { justify-content: flex-end; }
 
 .conj-header,
 .conj-footer {
