@@ -104,6 +104,7 @@ export interface ArticleMove {
  * a selected one. Returns null when there's nothing to move.
  */
 export function moveLeadingArticle(values: WordFormValues): { values: WordFormValues; move: ArticleMove } | null {
+  if (values.type === 'phrase') return null;
   const split = splitLeadingArticle(values.spanish);
   if (!split) return null;
   const previous = values.article && values.article !== split.article ? values.article : undefined;
