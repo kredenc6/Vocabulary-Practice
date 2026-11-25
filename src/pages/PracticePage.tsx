@@ -3,7 +3,6 @@ import { useUser } from '../context/auth';
 import { useWords } from '../context/words';
 import { useToast } from '../context/toasts';
 import { loadSettings, makeCard, saveSettings, shuffle } from '../lib/practice';
-import { isComplete } from '../lib/wordValidation';
 import { saveSession } from '../services/statsRepo';
 import type { CardResult, PracticeCard, PracticeSettings, VocabWord } from '../types';
 import { PracticeSetup } from '../components/practice/PracticeSetup';
@@ -18,13 +17,13 @@ type Phase =
 interface Props {
   active: boolean;
   onGoToVocabulary: () => void;
+  onGoToExcluded: () => void;
 }
 
-export function PracticePage({ active, onGoToVocabulary }: Props) {
+export function PracticePage({ active, onGoToVocabulary, onGoToExcluded }: Props) {
   const user = useUser();
   const notify = useToast();
-  // Drafts never reach practice: everything below works on complete words only.
-  const { words, practiceWords } = useWords();
+  const { draftWords, excludedWords, practiceWords } = useWords();
   const [settings, setSettings] = useState<PracticeSettings>(loadSettings);
   const [phase, setPhase] = useState<Phase>({ name: 'setup' });
 
@@ -34,10 +33,11 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
   };
 
   const start = (selected: VocabWord[], shuffleOrder = false) => {
-    // A word may have become a draft since it was selected (e.g. "Review missed words").
-    const complete = selected.filter(isComplete);
-    if (complete.length === 0) return;
-    const ordered = shuffleOrder ? shuffle(complete) : complete;
+    // Resolve old session results against the current practice list.
+    const byId = new Map(practiceWords.map((word) => [word.id, word]));
+    const eligible = selected.flatMap((word) => byId.get(word.id) ?? []);
+    if (eligible.length === 0) return;
+    const ordered = shuffleOrder ? shuffle(eligible) : eligible;
     setPhase({
       name: 'session',
       id: Date.now(),
@@ -65,22 +65,32 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
     setPhase({ name: 'summary', results });
   };
 
-  if (practiceWords.length === 0) {
-    const drafts = words.length;
+  if (phase.name === 'setup' && practiceWords.length === 0) {
+    const hasExcluded = excludedWords.length > 0;
+    const hasDrafts = draftWords.length > 0;
     return (
       <div className="card empty-state">
         <div className="emoji" aria-hidden="true">
           📚
         </div>
-        <h2>{drafts ? 'No words ready to practice' : 'Your vocabulary is empty'}</h2>
+        <h2>{hasExcluded || hasDrafts ? 'No words ready to practice' : 'Your vocabulary is empty'}</h2>
         <p>
-          {drafts
-            ? `All ${drafts} of your words are drafts (missing translation, word type or article) and can't be practiced yet.`
-            : 'Add some Spanish–English word pairs or import a CSV file to start practicing.'}
+          {hasExcluded
+            ? 'Return words from Excluded or add new words to practice.'
+            : hasDrafts
+              ? 'Complete your drafts to make them available for practice.'
+              : 'Add some Spanish–English word pairs or import a CSV file to start practicing.'}
         </p>
-        <button type="button" className="btn btn-primary" onClick={onGoToVocabulary}>
-          Add words
-        </button>
+        <div className="row" style={{ justifyContent: 'center' }}>
+          {hasExcluded && (
+            <button type="button" className="btn btn-secondary" onClick={onGoToExcluded}>
+              Open excluded words
+            </button>
+          )}
+          <button type="button" className="btn btn-primary" onClick={onGoToVocabulary}>
+            Add words
+          </button>
+        </div>
       </div>
     );
   }
@@ -100,6 +110,7 @@ export function PracticePage({ active, onGoToVocabulary }: Props) {
       return (
         <SessionSummary
           results={phase.results}
+          practiceWords={practiceWords}
           onReviewMistakes={(missed) => start(missed, true)}
           onDone={() => setPhase({ name: 'setup' })}
         />

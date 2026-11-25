@@ -91,6 +91,12 @@ service cloud.firestore {
         && (!('plural' in data) || (data.plural is string && data.plural.size() <= 300))
         && (!('conjugations' in data) || isValidConjugations(data.conjugations))
         && (!('adjective' in data) || isValidAdjective(data.adjective))
+        && (!('excludedFromPractice' in data) || (
+          data.excludedFromPractice == true
+          && data.english.size() > 0
+          && ('type' in data)
+          && (data.type != 'noun' || ('article' in data))
+        ))
         && data.schemaVersion is int
         && data.easeFactor is number
         && data.interval is number

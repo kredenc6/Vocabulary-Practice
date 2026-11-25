@@ -1,5 +1,6 @@
 import type { WordRowState } from '../../hooks/useWordRow';
 import { formatSpanish } from '../../lib/wordDisplay';
+import { isComplete } from '../../lib/wordValidation';
 import type { VocabWord } from '../../types';
 import { WordForm } from './WordForm';
 
@@ -49,8 +50,9 @@ export function WordRowEditor({ word, state }: { word: VocabWord; state: WordRow
   );
 }
 
-/** Edit and delete buttons, with the inline "Delete / Keep" confirmation. */
+/** Row actions, with the inline "Delete / Keep" confirmation. */
 export function WordRowActions({ word, state }: { word: VocabWord; state: WordRowState }) {
+  const practiceAction = word.excludedFromPractice ? 'Return to practice' : 'Exclude from practice';
   return (
     <span className="word-actions">
       {state.mode === 'confirm-delete' ? (
@@ -64,6 +66,17 @@ export function WordRowActions({ word, state }: { word: VocabWord; state: WordRo
         </span>
       ) : (
         <>
+          {isComplete(word) && (
+            <button
+              type="button"
+              className="btn btn-ghost btn-sm"
+              aria-label={`${practiceAction} for ${formatSpanish(word)}`}
+              disabled={state.changingPracticeExclusion}
+              onClick={state.togglePracticeExclusion}
+            >
+              {practiceAction}
+            </button>
+          )}
           <button type="button" className="icon-btn" onClick={state.startEdit} aria-label={`Edit ${formatSpanish(word)}`} title="Edit">
             <EditIcon />
           </button>

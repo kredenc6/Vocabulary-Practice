@@ -8,7 +8,7 @@ import { isComplete } from '../../lib/wordValidation';
 import { WordForm } from './WordForm';
 
 export function AddWordForm() {
-  const { practiceWords, addWord } = useWords();
+  const { completeWords, addWord } = useWords();
   const [values, setValues] = useState<WordFormValues>(EMPTY_WORD_FORM);
   const notify = useToast();
   const spanishRef = useRef<HTMLInputElement>(null);
@@ -18,7 +18,7 @@ export function AddWordForm() {
     const label = wordLabel(input);
 
     const key = pairKey(input);
-    if (practiceWords.some((w) => pairKey(w) === key)) {
+    if (completeWords.some((w) => pairKey(w) === key)) {
       notify({ type: 'error', message: `"${label}" is already in your vocabulary.` });
       return;
     }
@@ -29,7 +29,9 @@ export function AddWordForm() {
       await addWord(input);
       notify({
         type: 'success',
-        message: isComplete(input) ? `Added "${label}".` : `Saved "${label}" to drafts.`,
+        message: input.excludedFromPractice
+          ? `Added "${label}" to Excluded.`
+          : isComplete(input) ? `Added "${label}".` : `Saved "${label}" to drafts.`,
       });
     } catch (err) {
       console.error(err);
@@ -48,6 +50,7 @@ export function AddWordForm() {
         onChange={setValues}
         onSubmit={handleSubmit}
         submitLabels={{ complete: 'Add word', draft: 'Add to drafts' }}
+        allowExclusion
         spanishRef={spanishRef}
       />
     </div>

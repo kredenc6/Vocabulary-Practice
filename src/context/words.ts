@@ -2,14 +2,15 @@ import { createContext, useContext } from 'react';
 import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordUpdate } from '../types';
 
 export interface WordsContextValue {
-  /** All words of the signed-in user (drafts included), newest first. Kept in sync in real time. */
+  /** All words of the signed-in user, newest first. Kept in sync in real time. */
   words: VocabWord[];
-  /**
-   * Complete words only (see isComplete in lib/wordValidation). Practice and
-   * statistics must use this list – drafts never reach them.
-   */
+  /** Complete words, including excluded words, used for duplicate checks. */
+  completeWords: VocabWord[];
+  /** Words currently eligible for practice and word-based statistics. */
   practiceWords: VocabWord[];
-  /** Drafts only (the complement of practiceWords), newest first. */
+  /** Complete words manually excluded from practice, newest first. */
+  excludedWords: VocabWord[];
+  /** Incomplete words, newest first. */
   draftWords: VocabWord[];
   loading: boolean;
   error: string | null;

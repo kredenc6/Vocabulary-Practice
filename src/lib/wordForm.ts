@@ -9,6 +9,7 @@ import { cleanConjugations } from './conjugations';
 import { adjectiveToFormState, cleanAdjective } from './adjective';
 import type { AdjectiveFormState } from './adjective';
 import type { VocabWordData, WordInput, WordUpdate } from '../types';
+import { isComplete } from './wordValidation';
 import type { WordCompletenessFields } from './wordValidation';
 import { formatSpanish } from './wordDisplay';
 
@@ -19,6 +20,7 @@ export interface WordFormValues {
   type: WordType | '';
   article: Article | '';
   plural: string;
+  excludedFromPractice: boolean;
   /** Raw editor state (may contain empty strings); cleaned on save. */
   conjugations: Conjugations;
   /** Four-form / two-form choice and all form inputs; only the chosen kind is saved. */
@@ -31,6 +33,7 @@ export const EMPTY_WORD_FORM: WordFormValues = {
   type: '',
   article: '',
   plural: '',
+  excludedFromPractice: false,
   conjugations: {},
   adjective: adjectiveToFormState(),
 };
@@ -42,6 +45,7 @@ export function wordToFormValues(word: VocabWordData): WordFormValues {
     type: word.type ?? '',
     article: word.article ?? '',
     plural: word.plural ?? '',
+    excludedFromPractice: word.excludedFromPractice === true,
     conjugations: word.conjugations ?? {},
     adjective: adjectiveToFormState(word.adjective),
   };
@@ -133,7 +137,7 @@ export function formCompletenessFields(values: WordFormValues): WordCompleteness
 /** For creating a word: fields that are empty or don't apply are omitted. */
 export function formToWordInput(values: WordFormValues): WordInput {
   const { spanish, english, type, article, plural, conjugations, adjective } = normalized(values);
-  return {
+  const input: WordInput = {
     spanish,
     english,
     ...(type && { type }),
@@ -142,6 +146,8 @@ export function formToWordInput(values: WordFormValues): WordInput {
     ...(conjugations && { conjugations }),
     ...(adjective && { adjective }),
   };
+  if (values.excludedFromPractice && isComplete(input)) input.excludedFromPractice = true;
+  return input;
 }
 
 /** For updating a word: fields that are empty or don't apply are cleared (null → deleteField()). */
@@ -155,5 +161,6 @@ export function formToWordUpdate(values: WordFormValues): WordUpdate {
     plural: plural ?? null,
     conjugations: conjugations ?? null,
     adjective: adjective ?? null,
+    ...(!isComplete({ spanish, english, type, article }) && { excludedFromPractice: false }),
   };
 }

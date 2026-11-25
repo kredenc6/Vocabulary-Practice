@@ -33,14 +33,17 @@ export function WordsProvider({ uid, children }: { uid: string; children: ReactN
     );
   }, [uid]);
 
-  // The single place where drafts are filtered out of practice and statistics.
-  const practiceWords = useMemo(() => words.filter(isComplete), [words]);
+  const completeWords = useMemo(() => words.filter(isComplete), [words]);
+  const practiceWords = useMemo(() => completeWords.filter((word) => !word.excludedFromPractice), [completeWords]);
+  const excludedWords = useMemo(() => completeWords.filter((word) => word.excludedFromPractice), [completeWords]);
   const draftWords = useMemo(() => words.filter(isDraft), [words]);
 
   const value = useMemo<WordsContextValue>(
     () => ({
       words,
+      completeWords,
       practiceWords,
+      excludedWords,
       draftWords,
       loading,
       error,
@@ -53,7 +56,7 @@ export function WordsProvider({ uid, children }: { uid: string; children: ReactN
         notify({ type: 'error', message: 'Could not save a practice answer. Its learning progress and daily statistics may not have been updated.' });
       }),
     }),
-    [uid, words, practiceWords, draftWords, loading, error, notify],
+    [uid, words, completeWords, practiceWords, excludedWords, draftWords, loading, error, notify],
   );
 
   return <WordsContext.Provider value={value}>{children}</WordsContext.Provider>;

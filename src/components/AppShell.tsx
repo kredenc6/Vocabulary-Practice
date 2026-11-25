@@ -4,6 +4,7 @@ import { useWords } from '../context/words';
 import { useHashTab } from '../hooks/useHashTab';
 import { isDue } from '../lib/srs';
 import { DraftsPage } from '../pages/DraftsPage';
+import { ExcludedPage } from '../pages/ExcludedPage';
 import { PracticePage } from '../pages/PracticePage';
 import { VocabularyPage } from '../pages/VocabularyPage';
 import { Spinner } from './Spinner';
@@ -13,13 +14,14 @@ import { useToast } from '../context/toasts';
 // Statistics (and the charting library) load only when the tab is opened.
 const StatsPage = lazy(() => import('../pages/StatsPage').then((m) => ({ default: m.StatsPage })));
 
-const TABS = ['practice', 'vocabulary', 'drafts', 'stats'] as const;
+const TABS = ['practice', 'vocabulary', 'drafts', 'excluded', 'stats'] as const;
 type Tab = (typeof TABS)[number];
 
 const TAB_LABELS: Record<Tab, string> = {
   practice: 'Practice',
   vocabulary: 'Vocabulary',
   drafts: 'Drafts',
+  excluded: 'Excluded',
   stats: 'Statistics',
 };
 
@@ -52,8 +54,9 @@ function UserMenu() {
 
 export function AppShell() {
   const [tab, setTab] = useHashTab(TABS, 'practice');
-  const { practiceWords, draftWords, loading, error } = useWords();
+  const { practiceWords, draftWords, excludedWords, loading, error } = useWords();
   const draftCount = draftWords.length;
+  const excludedCount = excludedWords.length;
   const dueCount = useMemo(() => {
     const now = Date.now();
     return practiceWords.filter((w) => isDue(w, now)).length;
@@ -89,6 +92,11 @@ export function AppShell() {
                     {draftCount > 99 ? '99+' : draftCount}
                   </span>
                 )}
+                {t === 'excluded' && excludedCount > 0 && (
+                  <span className="nav-count nav-count-muted" aria-label={`${excludedCount} excluded`}>
+                    {excludedCount > 99 ? '99+' : excludedCount}
+                  </span>
+                )}
               </button>
             ))}
           </nav>
@@ -108,10 +116,19 @@ export function AppShell() {
           <>
             {/* Practice stays mounted so a running session survives tab switches. */}
             <div hidden={tab !== 'practice'}>
-              <PracticePage active={tab === 'practice'} onGoToVocabulary={() => setTab('vocabulary')} />
+              <PracticePage
+                active={tab === 'practice'}
+                onGoToVocabulary={() => setTab('vocabulary')}
+                onGoToExcluded={() => setTab('excluded')}
+              />
             </div>
-            {tab === 'vocabulary' && <VocabularyPage onGoToDrafts={() => setTab('drafts')} />}
+            {tab === 'vocabulary' && (
+              <VocabularyPage onGoToDrafts={() => setTab('drafts')} onGoToExcluded={() => setTab('excluded')} />
+            )}
             {tab === 'drafts' && <DraftsPage onGoToVocabulary={() => setTab('vocabulary')} />}
+            {tab === 'excluded' && (
+              <ExcludedPage onGoToVocabulary={() => setTab('vocabulary')} onGoToDrafts={() => setTab('drafts')} />
+            )}
             {tab === 'stats' && (
               <Suspense fallback={<Spinner label="Loading statistics…" />}>
                 <StatsPage />

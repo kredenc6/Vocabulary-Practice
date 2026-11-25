@@ -26,12 +26,13 @@ const searchable = (text: string) => stripAccents(normalize(text));
 
 interface Props {
   onGoToDrafts: () => void;
+  onGoToExcluded: () => void;
 }
 
-export function VocabularyPage({ onGoToDrafts }: Props) {
-  // The main list shows complete words only; drafts live in the Drafts tab.
-  const { practiceWords: words, draftWords } = useWords();
+export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
+  const { practiceWords: words, draftWords, excludedWords } = useWords();
   const draftCount = draftWords.length;
+  const excludedCount = excludedWords.length;
   const notify = useToast();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
@@ -68,6 +69,14 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
                 {' · '}
                 <button type="button" className="link-btn" onClick={onGoToDrafts}>
                   {draftCount} draft{draftCount === 1 ? '' : 's'}
+                </button>
+              </>
+            )}
+            {excludedCount > 0 && (
+              <>
+                {' · '}
+                <button type="button" className="link-btn" onClick={onGoToExcluded}>
+                  {excludedCount} excluded
                 </button>
               </>
             )}
@@ -125,6 +134,13 @@ export function VocabularyPage({ onGoToDrafts }: Props) {
           <div className="empty-state">
             {words.length > 0 ? (
               <p>No words match your filters.</p>
+            ) : excludedCount > 0 ? (
+              <>
+                <p>No words available for practice. You can return words from Excluded.</p>
+                <button type="button" className="btn btn-secondary" onClick={onGoToExcluded}>
+                  Open excluded words
+                </button>
+              </>
             ) : draftCount > 0 ? (
               <>
                 <p>

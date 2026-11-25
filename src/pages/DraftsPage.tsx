@@ -28,7 +28,7 @@ export function DraftsPage({ onGoToVocabulary }: Props) {
               ✅
             </div>
             <h2>No drafts</h2>
-            <p>All your words are complete and ready to practice. Words you save with missing fields will show up here.</p>
+            <p>Words you save with missing fields will show up here.</p>
             <button type="button" className="btn btn-secondary" onClick={onGoToVocabulary}>
               Go to vocabulary
             </button>

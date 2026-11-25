@@ -50,6 +50,8 @@ export interface VocabWordData extends SrsState {
    * `spanish` holds the masculine singular (four-form) or the singular (two-form).
    */
   adjective?: AdjectiveForms;
+  /** Present only for complete words that have been excluded from practice. */
+  excludedFromPractice?: true;
   /** Written as WORD_SCHEMA_VERSION on every write; absent only on legacy documents. */
   schemaVersion?: number;
   createdAt: EpochMs;
@@ -74,6 +76,7 @@ export interface WordInput extends WordPairInput {
   plural?: string;
   conjugations?: Conjugations;
   adjective?: AdjectiveForms;
+  excludedFromPractice?: true;
 }
 
 /**
@@ -88,6 +91,8 @@ export interface WordUpdate {
   plural?: string | null;
   conjugations?: Conjugations | null;
   adjective?: AdjectiveForms | null;
+  /** False removes the exclusion. */
+  excludedFromPractice?: boolean;
 }
 
 export type WordStatus = 'new' | 'learning' | 'mastered';

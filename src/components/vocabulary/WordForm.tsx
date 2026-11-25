@@ -26,6 +26,7 @@ interface Props {
   onSubmit: () => void;
   /** Button text for a complete word and for a draft. */
   submitLabels: { complete: string; draft: string };
+  allowExclusion?: boolean;
   spanishRef?: Ref<HTMLInputElement>;
   autoFocus?: boolean;
   /** Extra buttons after the submit button (e.g. Cancel). */
@@ -33,7 +34,7 @@ interface Props {
 }
 
 /** Shared add/edit form. Incomplete words can be saved as drafts. */
-export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef, autoFocus, children }: Props) {
+export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclusion, spanishRef, autoFocus, children }: Props) {
   const isNoun = nounFieldsApply(values.type);
   const isVerb = verbFieldsApply(values.type);
   const isAdjective = adjectiveFieldsApply(values.type);
@@ -49,6 +50,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
   const missing = getMissingFields(formCompletenessFields(values));
   const complete = missing.length === 0;
   const canSubmit = values.spanish.trim() !== '';
+  const movesToDrafts = !allowExclusion && values.excludedFromPractice && !complete && canSubmit;
   const autofill = useRef({ values, session: createAdjectiveAutofillSession(isAdjective) });
   const suggestion = isAdjective ? suggestAdjective(values.spanish) : undefined;
 
@@ -275,11 +277,27 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, spanishRef,
         />
       )}
 
+      {allowExclusion && (
+        <label className="word-exclusion-option">
+          <input
+            type="checkbox"
+            checked={complete && values.excludedFromPractice}
+            disabled={!complete}
+            onChange={(event) => set({ excludedFromPractice: event.target.checked })}
+          />
+          Exclude from practice
+        </label>
+      )}
+      {movesToDrafts && (
+        <p className="alert alert-warn" role="status">
+          Saving will move this word from Excluded to Drafts.
+        </p>
+      )}
       <div className="word-form-footer">
         <p className="small muted" role="status">
           {complete
-            ? 'Complete – ready to practice.'
-            : `Missing: ${missing.map((f) => MANDATORY_FIELD_LABELS[f]).join(', ')}.${canSubmit ? ' Will be saved as a draft.' : ''}`}
+            ? values.excludedFromPractice ? 'Will be saved in Excluded.' : 'Complete – ready to practice.'
+            : `Missing: ${missing.map((f) => MANDATORY_FIELD_LABELS[f]).join(', ')}.${canSubmit && !movesToDrafts ? ' Will be saved as a draft.' : ''}`}
         </p>
         <div className="row">
           <button type="submit" className={`btn ${complete ? 'btn-primary' : 'btn-secondary'}`} disabled={!canSubmit}>

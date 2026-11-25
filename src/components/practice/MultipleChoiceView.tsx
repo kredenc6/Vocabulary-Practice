@@ -10,7 +10,7 @@ interface Props {
   onAnswer: (outcome: AnswerOutcome, userAnswer: string) => void;
 }
 
-/** Show a word with 4 options, exactly one of which is correct. */
+/** Show a word with exactly one correct option. */
 export function MultipleChoiceView({ card, active, onAnswer }: Props) {
   const [selected, setSelected] = useState<string | null>(null);
   const options = card.options ?? [];

@@ -58,6 +58,7 @@ const wordConverter: FirestoreDataConverter<VocabWord> = {
       ...(typeof d.plural === 'string' && d.plural.trim() && { plural: d.plural }),
       ...(conjugations && { conjugations }),
       ...(adjective && { adjective }),
+      ...(d.excludedFromPractice === true && { excludedFromPractice: true as const }),
       ...(typeof d.schemaVersion === 'number' && { schemaVersion: d.schemaVersion }),
     };
   },

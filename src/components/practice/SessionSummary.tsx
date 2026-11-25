@@ -4,15 +4,16 @@ import { SpanishWord } from '../SpanishWord';
 
 interface Props {
   results: CardResult[];
+  practiceWords: VocabWord[];
   onReviewMistakes: (words: VocabWord[]) => void;
   onDone: () => void;
 }
 
-export function SessionSummary({ results, onReviewMistakes, onDone }: Props) {
+export function SessionSummary({ results, practiceWords, onReviewMistakes, onDone }: Props) {
   const summary = useMemo(() => {
     const count = (outcome: CardResult['outcome']) => results.filter((r) => r.outcome === outcome).length;
-    const missed = new Map<string, VocabWord>();
-    for (const r of results) if (r.outcome === 'incorrect') missed.set(r.card.word.id, r.card.word);
+    const missed = new Set(results.filter((result) => result.outcome === 'incorrect').map((result) => result.card.word.id));
+    const practiceById = new Map(practiceWords.map((word) => [word.id, word]));
     const correct = count('correct');
     const close = count('close');
     return {
@@ -20,9 +21,9 @@ export function SessionSummary({ results, onReviewMistakes, onDone }: Props) {
       close,
       incorrect: count('incorrect'),
       accuracy: results.length ? Math.round(((correct + close) / results.length) * 100) : 0,
-      missed: [...missed.values()],
+      missed: [...missed].flatMap((id) => practiceById.get(id) ?? []),
     };
-  }, [results]);
+  }, [results, practiceWords]);
 
   if (results.length === 0) {
     return (

@@ -18,6 +18,7 @@ Words are stored per user at `users/{uid}/words/{wordId}`. The Firestore documen
 | `plural` | string? | Nouns only. Plural form without its article, at most 300 characters. |
 | `conjugations` | `Conjugations`? | Verbs only, grouped: `conjugations[group][tense][person]` or `conjugations[group][form]`, with only non-empty values. The gerund is `conjugations.progressive.gerund`. See [Verb conjugations](#verb-conjugations). |
 | `adjective` | `AdjectiveForms`? | Adjectives only. `{ kind: 'four', feminine?, masculinePlural?, femininePlural? }` or `{ kind: 'two', plural? }`. See [Adjective forms](#adjective-forms). |
+| `excludedFromPractice` | `true`? | Marks a complete word as excluded. Returning it to practice or saving it as a draft removes the field. |
 | `schemaVersion` | int | Always written as `WORD_SCHEMA_VERSION` (currently `1`) on every create and update. |
 | `createdAt`, `updatedAt` | int | Epoch milliseconds. |
 | `easeFactor`, `interval`, `repetitions`, `nextReviewDate`, `lastReviewedAt`, `lapses`, `totalReviews`, `correctReviews` | numbers | Spaced-repetition state (SM-2), see [`src/lib/srs.ts`](../src/lib/srs.ts). |
@@ -40,13 +41,15 @@ A word is **complete** when all of these hold:
 
 Anything else is a **draft**. The status is always derived with `isComplete` / `isDraft` / `getMissingFields` and is never stored.
 
-Drafts never reach practice or statistics. `WordsContext` provides three derived lists:
+Drafts and excluded words are left out of practice and word-based statistics. `WordsContext` provides these lists.
 
-- `practiceWords`: complete words only. It's the only list practice and statistics code may use, and the main Vocabulary list shows it.
+- `practiceWords`: complete words available for practice. The Vocabulary list and word-based statistics use it.
 - `draftWords`: drafts only. The Drafts tab shows it, and its size is the nav badge.
-- `words`: everything. It's used for CSV export. Duplicate checks against saved words use complete words only, excluding drafts.
+- `excludedWords`: complete words shown in the Excluded tab.
+- `completeWords`: practice and excluded words. Duplicate checks match against complete words.
+- `words`: all saved words, including drafts.
 
-Saving a word through the shared form moves it between Vocabulary and Drafts automatically, because the status is derived. Draft rows show `MISSING_FIELD_TAGS` (e.g. "no type") from `getMissingFields`.
+Saving incomplete fields moves a word to Drafts and removes any exclusion in the same write. Draft rows show `MISSING_FIELD_TAGS` (e.g. "no type") from `getMissingFields`. Excluding a word or returning it to practice keeps its existing review schedule and progress.
 
 ## Add/edit form
 

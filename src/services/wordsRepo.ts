@@ -20,6 +20,7 @@ import { cleanAdjective } from '../lib/adjective';
 import { cleanConjugations } from '../lib/conjugations';
 import { applyReview, initialSrsState, outcomeToQuality, pickSrs } from '../lib/srs';
 import { dayKey } from '../lib/dates';
+import { isComplete } from '../lib/wordValidation';
 import type { AnswerOutcome, PracticeMode, SrsState, VocabWord, WordInput, WordUpdate } from '../types';
 
 /** Firestore allows at most 500 writes per batch. */
@@ -30,7 +31,7 @@ function cleanInput(input: WordInput): WordInput {
   const plural = input.plural?.trim();
   const conjugations = cleanConjugations(input.conjugations);
   const adjective = cleanAdjective(input.adjective);
-  return {
+  const cleaned: WordInput = {
     spanish: input.spanish.trim(),
     english: input.english.trim(),
     ...(input.type && { type: input.type }),
@@ -39,6 +40,8 @@ function cleanInput(input: WordInput): WordInput {
     ...(conjugations && { conjugations }),
     ...(adjective && { adjective }),
   };
+  if (input.excludedFromPractice && isComplete(cleaned)) cleaned.excludedFromPractice = true;
+  return cleaned;
 }
 
 function newWord(uid: string, input: WordInput, now: number): VocabWord {
@@ -75,7 +78,7 @@ export async function addWord(uid: string, input: WordInput): Promise<void> {
 }
 
 export async function updateWord(uid: string, wordId: string, changes: WordUpdate): Promise<void> {
-  const data: Record<string, string | number | FieldValue | Conjugations | AdjectiveForms> = {
+  const data: Record<string, string | number | boolean | FieldValue | Conjugations | AdjectiveForms> = {
     updatedAt: Date.now(),
     schemaVersion: WORD_SCHEMA_VERSION,
   };
@@ -95,6 +98,9 @@ export async function updateWord(uid: string, wordId: string, changes: WordUpdat
   }
   if (changes.adjective !== undefined) {
     data.adjective = cleanAdjective(changes.adjective) ?? deleteField();
+  }
+  if (changes.excludedFromPractice !== undefined) {
+    data.excludedFromPractice = changes.excludedFromPractice ? true : deleteField();
   }
   await updateDoc(wordDoc(uid, wordId), data);
 }

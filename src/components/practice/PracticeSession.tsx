@@ -1,6 +1,6 @@
-import { useRef, useState } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import { useWords } from '../../context/words';
-import { DIRECTION_LABELS, MODE_LABELS, answerSide, makeCard, repeatCard } from '../../lib/practice';
+import { DIRECTION_LABELS, MODE_LABELS, answerSide, answerText, makeCard, repeatCard, sideText } from '../../lib/practice';
 import { WordSide } from '../SpanishWord';
 import type { AnswerOutcome, CardResult, PracticeCard, PracticeSettings, VocabWord } from '../../types';
 import { FeedbackBar } from './FeedbackBar';
@@ -27,12 +27,12 @@ interface Props {
 const MAX_REPEATS_PER_WORD = 2;
 
 export function PracticeSession({ initialCards, settings, active, onFinish }: Props) {
-  // Complete words only: a word that became a draft mid-session is no longer recorded or re-asked.
   const { practiceWords, recordReview } = useWords();
+  const practiceById = useMemo(() => new Map(practiceWords.map((word) => [word.id, word])), [practiceWords]);
   const [queue, setQueue] = useState(initialCards);
-  const [index, setIndex] = useState(0);
+  const [completedCount, setCompletedCount] = useState(0);
   const [results, setResults] = useState<CardResult[]>([]);
-  const [pending, setPending] = useState<PendingAnswer | null>(null);
+  const [pendingAnswer, setPendingAnswer] = useState<{ cardKey: string; answer: PendingAnswer } | null>(null);
 
   /** Latest SRS state of words answered in this session (ahead of the Firestore snapshot). */
   const latest = useRef(new Map<string, VocabWord>());
@@ -40,35 +40,63 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
   /** Words already rated "I was close" in this session. Lives only as long as the session. */
   const closeUsed = useRef(new Set<string>());
 
-  const card = queue[index];
+  const eligibleQueue = queue.filter((item) => practiceById.has(item.word.id));
+  // Drop unavailable cards so restoring a word doesn't interrupt this session's current card.
+  if (eligibleQueue.length !== queue.length) setQueue(eligibleQueue);
+  const [nextCard, ...remaining] = eligibleQueue;
+  if (!nextCard) {
+    return (
+      <div className="session card empty-state">
+        <p>No more words are available in this session.</p>
+        <button type="button" className="btn btn-primary" onClick={() => onFinish(results)}>
+          Finish session
+        </button>
+      </div>
+    );
+  }
+
+  const pending = pendingAnswer?.cardKey === nextCard.key ? pendingAnswer.answer : null;
+  let card = nextCard;
+  // Options are generated when a card is queued and may have since left the practice pool.
+  if (nextCard.options) {
+    const side = answerSide(nextCard.direction);
+    const available = new Set(practiceWords.map((word) => sideText(word, side)));
+    const correct = answerText(nextCard);
+    const options = nextCard.options.filter((option) => option === correct || available.has(option));
+    card = options.length > 1 || pending
+      ? { ...nextCard, options }
+      : { ...nextCard, mode: 'flashcard', options: undefined };
+  }
+
+  const setPending = (answer: PendingAnswer) => setPendingAnswer({ cardKey: card.key, answer });
+  const advance = (nextQueue: PracticeCard[], nextResults: CardResult[]) => {
+    setPendingAnswer(null);
+    if (!nextQueue.length) {
+      onFinish(nextResults);
+      return;
+    }
+    setQueue(nextQueue);
+    setCompletedCount(completedCount + 1);
+  };
 
   /** Save the answer to the word's SRS state and move to the next card. */
   const commit = (answer: PendingAnswer) => {
-    const stored = practiceWords.find((w) => w.id === card.word.id);
-    const base = latest.current.get(card.word.id) ?? stored ?? card.word;
-    let updated = base;
-    // Skip persisting if the word was deleted or became a draft in the meantime.
-    if (stored) {
-      updated = { ...base, ...recordReview(base, answer.outcome, card.mode) };
-      latest.current.set(updated.id, updated);
-    }
+    const base = latest.current.get(card.word.id) ?? practiceById.get(card.word.id) ?? card.word;
+    const updated = { ...base, ...recordReview(base, answer.outcome, card.mode) };
+    latest.current.set(updated.id, updated);
 
     const nextResults = [...results, { card, outcome: answer.outcome, userAnswer: answer.userAnswer }];
     setResults(nextResults);
 
-    let nextQueue = queue;
-    if (stored && answer.outcome === 'incorrect' && settings.repeatMistakes) {
+    if (answer.outcome === 'incorrect' && settings.repeatMistakes) {
       const count = repeats.current.get(updated.id) ?? 0;
       if (count < MAX_REPEATS_PER_WORD) {
         repeats.current.set(updated.id, count + 1);
-        nextQueue = [...queue, makeCard(updated, settings, practiceWords)];
-        setQueue(nextQueue);
+        remaining.push(makeCard(updated, settings, practiceWords));
       }
     }
 
-    setPending(null);
-    if (index + 1 >= nextQueue.length) onFinish(nextResults);
-    else setIndex(index + 1);
+    advance(remaining, nextResults);
   };
 
   const rateFlashcard = (rating: FlashcardRating) => {
@@ -76,15 +104,15 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
       // First "I was close": save nothing (SRS state incl. ease factor stays as is)
       // and ask the same card again later in this session.
       closeUsed.current.add(card.word.id);
-      setQueue([...queue, repeatCard(card)]);
-      setIndex(index + 1);
+      advance([...remaining, repeatCard(card)], results);
       return;
     }
     // A repeated "I was close" counts exactly like "I didn't know it".
     commit({ outcome: rating === 'known' ? 'correct' : 'incorrect' });
   };
 
-  const progress = (index / queue.length) * 100;
+  const total = completedCount + remaining.length + 1;
+  const progress = (completedCount / total) * 100;
   const isNew = (latest.current.get(card.word.id) ?? card.word).lastReviewedAt === null;
 
   return (
@@ -93,15 +121,15 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
         <div
           className="progress"
           role="progressbar"
-          aria-valuenow={index}
+          aria-valuenow={completedCount}
           aria-valuemin={0}
-          aria-valuemax={queue.length}
+          aria-valuemax={total}
           aria-label="Session progress"
         >
           <div className="progress-bar" style={{ width: `${progress}%` }} />
         </div>
         <span className="session-count">
-          {index + 1} / {queue.length}
+          {completedCount + 1} / {total}
         </span>
         <button type="button" className="btn btn-ghost btn-sm" onClick={() => onFinish(results)}>
           End
@@ -150,7 +178,7 @@ export function PracticeSession({ initialCards, settings, active, onFinish }: Pr
           onOverride={() => setPending({ ...pending, outcome: 'correct', note: 'Marked as correct.' })}
           onNext={() => commit(pending)}
           isLast={
-            index + 1 >= queue.length &&
+            remaining.length === 0 &&
             !(
               pending.outcome === 'incorrect' &&
               settings.repeatMistakes &&

@@ -2,7 +2,7 @@ import { useState } from 'react';
 import { useWords } from '../context/words';
 import { useToast } from '../context/toasts';
 import { pairKey } from '../lib/csv';
-import { formCompletenessFields, formToWordInput, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
+import { formToWordInput, formToWordUpdate, wordLabel, wordToFormValues } from '../lib/wordForm';
 import { isComplete } from '../lib/wordValidation';
 import type { WordFormValues } from '../lib/wordForm';
 import type { VocabWord } from '../types';
@@ -16,23 +16,26 @@ export interface WordRowState {
   setValues: (values: WordFormValues) => void;
   startEdit: () => void;
   save: () => Promise<void>;
+  togglePracticeExclusion: () => Promise<void>;
+  changingPracticeExclusion: boolean;
   remove: () => Promise<void>;
   resetProgress: () => void;
 }
 
 export interface WordRowOptions {
   /**
-   * Called after a complete word was saved as a draft. Its row leaves the
-   * vocabulary list at that point, so the page can offer an Open drafts action.
+   * Called after a complete word was saved as a draft so the page can offer
+   * an Open drafts action.
    */
   onMovedToDrafts?: (label: string) => void;
 }
 
-/** Edit/delete state shared by the vocabulary list and the drafts list. */
+/** Actions shared by the word lists. */
 export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions = {}): WordRowState {
-  const { practiceWords, updateWord, deleteWord, resetProgress } = useWords();
+  const { completeWords, updateWord, deleteWord, resetProgress } = useWords();
   const [mode, setMode] = useState<WordRowMode>('view');
   const [values, setValues] = useState<WordFormValues>(() => wordToFormValues(word));
+  const [changingPracticeExclusion, setChangingPracticeExclusion] = useState(false);
   const notify = useToast();
 
   return {
@@ -40,22 +43,23 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
     setMode,
     values,
     setValues,
+    changingPracticeExclusion,
     startEdit() {
       setValues(wordToFormValues(word));
       setMode('edit');
     },
-    // An incomplete word simply stays (or becomes) a draft – the status is derived,
-    // so the row moves between the vocabulary list and Drafts by itself.
+    // The lists update automatically when the saved word becomes a draft.
     async save() {
       // Block duplicate Spanish/English pairs for edits.
       const input = formToWordInput(values);
       const key = pairKey(input);
-      if (practiceWords.some((w) => w.id !== word.id && pairKey(w) === key)) {
+      if (completeWords.some((w) => w.id !== word.id && pairKey(w) === key)) {
         notify({ type: 'error', message: `"${wordLabel(input)}" is already in your vocabulary.` });
         return;
       }
 
-      const becomesDraft = isComplete(word) && !isComplete(formCompletenessFields(values));
+      const complete = isComplete(input);
+      const becomesDraft = isComplete(word) && !complete;
       try {
         await updateWord(word.id, formToWordUpdate(values));
         setMode('view');
@@ -64,12 +68,30 @@ export function useWordRow(word: VocabWord, { onMovedToDrafts }: WordRowOptions 
         } else {
           notify({
             type: 'success',
-            message: isComplete(input) ? `Saved "${wordLabel(input)}".` : `Saved "${wordLabel(input)}" to drafts.`,
+            message: complete ? `Saved "${wordLabel(input)}".` : `Saved "${wordLabel(input)}" to drafts.`,
           });
         }
       } catch (err) {
         console.error(err);
         notify({ type: 'error', message: 'Could not save changes.' });
+      }
+    },
+    async togglePracticeExclusion() {
+      if (!isComplete(word) || changingPracticeExclusion) return;
+      const excludedFromPractice = !word.excludedFromPractice;
+      const label = wordLabel(word);
+      setChangingPracticeExclusion(true);
+      try {
+        await updateWord(word.id, { excludedFromPractice });
+        notify({
+          type: 'success',
+          message: excludedFromPractice ? `Excluded "${label}" from practice.` : `Returned "${label}" to practice.`,
+        });
+      } catch (err) {
+        console.error(err);
+        notify({ type: 'error', message: 'Could not change the word’s practice status.' });
+      } finally {
+        setChangingPracticeExclusion(false);
       }
     },
     async remove() {
