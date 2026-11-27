@@ -8,8 +8,10 @@ import { AddWordForm } from '../components/vocabulary/AddWordForm';
 import { CsvImport } from '../components/vocabulary/CsvImport';
 import { WordRow } from '../components/vocabulary/WordRow';
 import { WordSearchInput } from '../components/vocabulary/WordSearchInput';
+import { WORD_TYPES, WORD_TYPE_LABELS, type WordType } from '../constants/word';
 
 type StatusFilter = 'all' | 'due' | WordStatus;
+type TypeFilter = 'all' | WordType;
 type SortKey = 'newest' | 'spanish' | 'english' | 'due';
 
 const PAGE_SIZE = 100;
@@ -33,6 +35,7 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
   const notify = useToast();
   const [search, setSearch] = useState('');
   const [filter, setFilter] = useState<StatusFilter>('all');
+  const [typeFilter, setTypeFilter] = useState<TypeFilter>('all');
   const [sort, setSort] = useState<SortKey>('newest');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
@@ -43,10 +46,11 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
     const result = words.filter((w) => {
       if (filter === 'due' && !isDue(w, at)) return false;
       if (filter !== 'all' && filter !== 'due' && wordStatus(w) !== filter) return false;
+      if (typeFilter !== 'all' && w.type !== typeFilter) return false;
       return matchesSearch(w);
     });
     return result.sort(SORTERS[sort]);
-  }, [words, search, filter, sort]);
+  }, [words, search, filter, typeFilter, sort]);
 
   return (
     <div className="stack">
@@ -93,7 +97,10 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
           <select
             className="input"
             value={filter}
-            onChange={(e) => setFilter(e.target.value as StatusFilter)}
+            onChange={(e) => {
+              setFilter(e.target.value as StatusFilter);
+              setVisible(PAGE_SIZE);
+            }}
             aria-label="Filter by status"
           >
             <option value="all">All words</option>
@@ -101,6 +108,22 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
             {(Object.keys(STATUS_LABELS) as WordStatus[]).map((s) => (
               <option key={s} value={s}>
                 {STATUS_LABELS[s]}
+              </option>
+            ))}
+          </select>
+          <select
+            className="input"
+            value={typeFilter}
+            onChange={(e) => {
+              setTypeFilter(e.target.value as TypeFilter);
+              setVisible(PAGE_SIZE);
+            }}
+            aria-label="Filter by word type"
+          >
+            <option value="all">All types</option>
+            {WORD_TYPES.map((type) => (
+              <option key={type} value={type}>
+                {WORD_TYPE_LABELS[type]}
               </option>
             ))}
           </select>
