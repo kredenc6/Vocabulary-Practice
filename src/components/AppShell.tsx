@@ -1,4 +1,4 @@
-import { Suspense, lazy, useMemo } from 'react';
+import { Suspense, lazy, useLayoutEffect, useMemo, useRef } from 'react';
 import { useAuth, useUser } from '../context/auth';
 import { useWords } from '../context/words';
 import { useHashTab } from '../hooks/useHashTab';
@@ -54,6 +54,8 @@ function UserMenu() {
 
 export function AppShell() {
   const [tab, setTab] = useHashTab(TABS, 'practice');
+  const scrollPositions = useRef<Partial<Record<Tab, number>>>({});
+  const activeTab = useRef(tab);
   const { practiceWords, draftWords, excludedWords, loading, error } = useWords();
   const draftCount = draftWords.length;
   const excludedCount = excludedWords.length;
@@ -61,6 +63,19 @@ export function AppShell() {
     const now = Date.now();
     return practiceWords.filter((w) => isDue(w, now)).length;
   }, [practiceWords]);
+
+  useLayoutEffect(() => {
+    activeTab.current = tab;
+    window.scrollTo({ top: scrollPositions.current[tab] ?? 0, behavior: 'auto' });
+  }, [tab]);
+
+  useLayoutEffect(() => {
+    const rememberPosition = () => {
+      scrollPositions.current[activeTab.current] = window.scrollY;
+    };
+    window.addEventListener('scroll', rememberPosition, { passive: true });
+    return () => window.removeEventListener('scroll', rememberPosition);
+  }, []);
 
   return (
     <>
