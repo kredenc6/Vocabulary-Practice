@@ -90,6 +90,13 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
     emit(fillAdjective(moved ? moved.values : next));
   };
 
+  const handleSpanishChange = (value: string) => {
+    let spanish = value;
+    if (spanish.includes('?') && !spanish.includes('¿')) spanish = `¿${spanish}`;
+    if (spanish.includes('!') && !spanish.includes('¡')) spanish = `¡${spanish}`;
+    changeWord({ ...values, spanish });
+  };
+
   const handleSubmit = (event: SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
     if (!canSubmit) return;
@@ -111,7 +118,7 @@ export function WordForm({ values, onChange, onSubmit, submitLabels, allowExclus
             ref={spanishRef}
             className="input"
             value={values.spanish}
-            onChange={(e) => changeWord({ ...values, spanish: e.target.value })}
+            onChange={(e) => handleSpanishChange(e.target.value)}
             placeholder={isAdjective ? adjectiveKind.basePlaceholder : 'manzana'}
             lang="es"
             maxLength={300}
