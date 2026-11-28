@@ -39,6 +39,11 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
   const [sort, setSort] = useState<SortKey>('newest');
   const [visible, setVisible] = useState(PAGE_SIZE);
 
+  const updateSearch = (value: string) => {
+    setSearch(value);
+    setVisible(PAGE_SIZE);
+  };
+
   const now = Date.now();
   const filtered = useMemo(() => {
     const at = Date.now();
@@ -81,7 +86,7 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
       </div>
 
       <div className="grid-2">
-        <AddWordForm />
+        <AddWordForm onSpanishChange={updateSearch} />
         <CsvImport />
       </div>
 
@@ -89,10 +94,7 @@ export function VocabularyPage({ onGoToDrafts, onGoToExcluded }: Props) {
         <div className="toolbar">
           <WordSearchInput
             value={search}
-            onChange={(value) => {
-              setSearch(value);
-              setVisible(PAGE_SIZE);
-            }}
+            onChange={updateSearch}
           />
           <select
             className="input"

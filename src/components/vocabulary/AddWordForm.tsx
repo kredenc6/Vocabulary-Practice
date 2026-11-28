@@ -8,11 +8,22 @@ import type { WordFormValues } from '../../lib/wordForm';
 import { isComplete } from '../../lib/wordValidation';
 import { WordForm } from './WordForm';
 
-export function AddWordForm() {
+interface Props {
+  onSpanishChange?: (spanish: string) => void;
+}
+
+export function AddWordForm({ onSpanishChange }: Props) {
   const { completeWords, addWord } = useWords();
   const [values, setValues] = useState<WordFormValues>(EMPTY_WORD_FORM);
   const notify = useToast();
   const spanishRef = useRef<HTMLInputElement>(null);
+
+  const handleChange = (next: WordFormValues) => {
+    setValues(next);
+    if (next.spanish !== values.spanish) {
+      onSpanishChange?.(next.spanish);
+    }
+  };
 
   const handleSubmit = async () => {
     const input = formToWordInput(values);
@@ -26,6 +37,7 @@ export function AddWordForm() {
     }
 
     setValues(EMPTY_WORD_FORM);
+    onSpanishChange?.('');
     spanishRef.current?.focus();
     try {
       await addWord(input);
@@ -49,7 +61,7 @@ export function AddWordForm() {
       </div>
       <WordForm
         values={values}
-        onChange={setValues}
+        onChange={handleChange}
         onSubmit={handleSubmit}
         submitLabels={{ complete: 'Add word', draft: 'Add to drafts' }}
         allowExclusion
