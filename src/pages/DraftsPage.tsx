@@ -1,5 +1,8 @@
+import { useMemo, useState } from 'react';
 import { useWords } from '../context/words';
+import { createWordSearch } from '../lib/wordSearch';
 import { DraftRow } from '../components/vocabulary/DraftRow';
+import { WordSearchInput } from '../components/vocabulary/WordSearchInput';
 
 interface Props {
   onGoToVocabulary: () => void;
@@ -8,6 +11,8 @@ interface Props {
 /** Words that are missing mandatory fields (see docs/word-model.md). */
 export function DraftsPage({ onGoToVocabulary }: Props) {
   const { draftWords } = useWords();
+  const [search, setSearch] = useState('');
+  const filtered = useMemo(() => draftWords.filter(createWordSearch(search)), [draftWords, search]);
 
   return (
     <div className="stack">
@@ -22,7 +27,26 @@ export function DraftsPage({ onGoToVocabulary }: Props) {
       </div>
 
       <div className="card">
-        {draftWords.length === 0 ? (
+        <div className="toolbar">
+          <WordSearchInput value={search} onChange={setSearch} />
+        </div>
+        {filtered.length > 0 ? (
+          <div className="word-list">
+            <div className="word-row draft-row word-row-head" aria-hidden="true">
+              <span>Spanish</span>
+              <span>English</span>
+              <span>Missing</span>
+              <span />
+            </div>
+            {filtered.map((w) => (
+              <DraftRow key={w.id} word={w} />
+            ))}
+          </div>
+        ) : draftWords.length > 0 ? (
+          <div className="empty-state">
+            <p>No drafts match your search.</p>
+          </div>
+        ) : (
           <div className="empty-state">
             <div className="emoji" aria-hidden="true">
               ✅
@@ -32,18 +56,6 @@ export function DraftsPage({ onGoToVocabulary }: Props) {
             <button type="button" className="btn btn-secondary" onClick={onGoToVocabulary}>
               Go to vocabulary
             </button>
-          </div>
-        ) : (
-          <div className="word-list">
-            <div className="word-row draft-row word-row-head" aria-hidden="true">
-              <span>Spanish</span>
-              <span>English</span>
-              <span>Missing</span>
-              <span />
-            </div>
-            {draftWords.map((w) => (
-              <DraftRow key={w.id} word={w} />
-            ))}
           </div>
         )}
       </div>
