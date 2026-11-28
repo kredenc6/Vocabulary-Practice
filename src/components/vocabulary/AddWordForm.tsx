@@ -1,8 +1,7 @@
 import { useRef, useState } from 'react';
 import { useWords } from '../../context/words';
 import { useToast } from '../../context/toasts';
-import { pairKey } from '../../lib/csv';
-import { completeWordTab } from '../../lib/wordDisplay';
+import { duplicateWordMessage, findDuplicateWord } from '../../lib/wordDuplicates';
 import { EMPTY_WORD_FORM, formToWordInput, wordLabel } from '../../lib/wordForm';
 import type { WordFormValues } from '../../lib/wordForm';
 import { isComplete } from '../../lib/wordValidation';
@@ -29,10 +28,9 @@ export function AddWordForm({ onSpanishChange }: Props) {
     const input = formToWordInput(values);
     const label = wordLabel(input);
 
-    const key = pairKey(input);
-    const duplicate = completeWords.find((w) => pairKey(w) === key);
+    const duplicate = findDuplicateWord(input, completeWords);
     if (duplicate) {
-      notify({ type: 'error', message: `"${label}" is already in the ${completeWordTab(duplicate)} tab.` });
+      notify({ type: 'error', message: duplicateWordMessage(input, duplicate) });
       return;
     }
 

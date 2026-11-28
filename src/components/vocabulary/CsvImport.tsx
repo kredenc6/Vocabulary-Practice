@@ -60,8 +60,8 @@ function FormatHelp() {
       </p>
       <p>
         Rows without an English translation, a type, or a noun's article are imported as drafts. Spanish/English pairs
-        matching a complete vocabulary entry or an earlier complete row are skipped, ignoring capitalization and
-        leading/trailing spaces. Drafts are excluded from this check.
+        matching a complete vocabulary entry (including its plural or adjective forms) or an earlier complete row are
+        skipped, ignoring capitalization and leading/trailing spaces. Drafts are excluded from this check.
       </p>
     </>
   );

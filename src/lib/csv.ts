@@ -8,8 +8,9 @@
 import Papa from 'papaparse';
 import { isArticle, isWordType } from '../constants/word';
 import type { Article, WordType } from '../constants/word';
-import type { VocabWord, WordInput, WordPairInput } from '../types';
+import type { VocabWord, WordInput } from '../types';
 import { completeWordTab } from './wordDisplay';
+import { pairKey, pairKeys } from './wordDuplicates';
 import { isComplete } from './wordValidation';
 
 export const CSV_DELIMITER = '|';
@@ -52,9 +53,16 @@ export interface CsvImportPlan {
 
 export type CsvParseResult = { ok: true; plan: CsvImportPlan } | { ok: false; error: string };
 
-/** Spanish/English duplicate key shared by adding, editing, and CSV import. */
-export function pairKey(pair: WordPairInput): string {
-  return `${pair.spanish.trim().toLowerCase()}\u0000${pair.english.trim().toLowerCase()}`;
+export { pairKey } from './wordDuplicates';
+
+function findKeyMatch<T>(keys: readonly string[], map: ReadonlyMap<string, T>, baseKey: string): T | undefined {
+  const exact = map.get(baseKey);
+  if (exact !== undefined) return exact;
+  for (const key of keys) {
+    const hit = map.get(key);
+    if (hit !== undefined) return hit;
+  }
+  return undefined;
 }
 
 /**
@@ -156,8 +164,18 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
     invalidValues: [],
     warnings,
   };
-  const existingByKey = new Map(existing.filter(isComplete).map((word) => [pairKey(word), word]));
-  const firstRowInFile = new Map<string, number>();
+  const existingByKey = new Map<string, VocabWord>();
+  const completeExisting = existing.filter(isComplete);
+  for (const word of completeExisting) {
+    for (const key of pairKeys(word)) {
+      if (!existingByKey.has(key)) existingByKey.set(key, word);
+    }
+  }
+  // Prefer exact base-form matches over optional-form matches.
+  for (const word of completeExisting) {
+    existingByKey.set(pairKey(word), word);
+  }
+  const firstRowInFile = new Map<string, { row: number; spanish: string; english: string; baseKey: string }>();
 
   rows.forEach((row, index) => {
     if (index <= headerIndex || isBlank(row)) return;
@@ -176,36 +194,12 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
       return;
     }
 
-    const key = pairKey({ spanish, english });
-    const duplicate = existingByKey.get(key);
-    if (duplicate) {
-      plan.duplicates.push({
-        row: rowNumber,
-        message: `The pair "${spanish}" / "${english}" is already in the ${completeWordTab(duplicate)} tab`,
-      });
-      return;
-    }
-    const firstRow = firstRowInFile.get(key);
-    if (firstRow !== undefined) {
-      plan.duplicates.push({ row: rowNumber, message: `The pair "${spanish}" / "${english}" already appears in row ${firstRow}` });
-      return;
-    }
-
     const typeValue = cell(row, 'type');
     const type = typeValue ? parseType(typeValue) : null;
-    if (typeValue && !type) {
-      plan.invalidValues.push({ row: rowNumber, message: `unknown type "${typeValue}" – imported without a type` });
-    }
 
     // Article and plural only apply to nouns; on other rows they are ignored.
-    let article: Article | null = null;
-    if (type === 'noun') {
-      const articleValue = cell(row, 'article');
-      article = articleValue ? parseArticle(articleValue) : null;
-      if (articleValue && !article) {
-        plan.invalidValues.push({ row: rowNumber, message: `unknown article "${articleValue}" – imported without an article` });
-      }
-    }
+    const articleValue = type === 'noun' ? cell(row, 'article') : '';
+    const article = articleValue ? parseArticle(articleValue) : null;
 
     const word: WordInput = {
       spanish,
@@ -214,9 +208,46 @@ export function planCsvImport(text: string, existing: VocabWord[]): CsvParseResu
       ...(article && { article }),
       ...(type === 'noun' && plural && { plural }),
     };
+
+    const baseKey = pairKey(word);
+    const keys = pairKeys(word);
+    const duplicate = findKeyMatch(keys, existingByKey, baseKey);
+    if (duplicate) {
+      plan.duplicates.push({
+        row: rowNumber,
+        message:
+          pairKey(duplicate) === baseKey
+            ? `The pair "${spanish}" / "${english}" is already in the ${completeWordTab(duplicate)} tab`
+            : `The pair "${spanish}" / "${english}" matches "${duplicate.spanish}" / "${duplicate.english}" in the ${completeWordTab(duplicate)} tab`,
+      });
+      return;
+    }
+    const firstMatch = findKeyMatch(keys, firstRowInFile, baseKey);
+    if (firstMatch) {
+      plan.duplicates.push({
+        row: rowNumber,
+        message:
+          firstMatch.baseKey === baseKey
+            ? `The pair "${spanish}" / "${english}" already appears in row ${firstMatch.row}`
+            : `The pair "${spanish}" / "${english}" matches "${firstMatch.spanish}" / "${firstMatch.english}" in row ${firstMatch.row}`,
+      });
+      return;
+    }
+
+    if (typeValue && !type) {
+      plan.invalidValues.push({ row: rowNumber, message: `unknown type "${typeValue}" – imported without a type` });
+    }
+    if (type === 'noun' && articleValue && !article) {
+      plan.invalidValues.push({ row: rowNumber, message: `unknown article "${articleValue}" – imported without an article` });
+    }
+
     plan.words.push(word);
     if (isComplete(word)) {
-      firstRowInFile.set(key, rowNumber);
+      const entry = { row: rowNumber, spanish, english, baseKey };
+      for (const key of keys) {
+        if (!firstRowInFile.has(key)) firstRowInFile.set(key, entry);
+      }
+      firstRowInFile.set(baseKey, entry);
       plan.completeCount++;
     } else plan.draftCount++;
   });
