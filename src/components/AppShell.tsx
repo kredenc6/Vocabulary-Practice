@@ -129,7 +129,7 @@ export function AppShell() {
           </div>
         ) : (
           <>
-            {/* Practice stays mounted so a running session survives tab switches. */}
+            {/* Keep tabs mounted so ongoing practice, searches, filters, and form edits survive tab switches. */}
             <div hidden={tab !== 'practice'}>
               <PracticePage
                 active={tab === 'practice'}
@@ -137,13 +137,15 @@ export function AppShell() {
                 onGoToExcluded={() => setTab('excluded')}
               />
             </div>
-            {tab === 'vocabulary' && (
+            <div hidden={tab !== 'vocabulary'}>
               <VocabularyPage onGoToDrafts={() => setTab('drafts')} onGoToExcluded={() => setTab('excluded')} />
-            )}
-            {tab === 'drafts' && <DraftsPage onGoToVocabulary={() => setTab('vocabulary')} />}
-            {tab === 'excluded' && (
+            </div>
+            <div hidden={tab !== 'drafts'}>
+              <DraftsPage onGoToVocabulary={() => setTab('vocabulary')} />
+            </div>
+            <div hidden={tab !== 'excluded'}>
               <ExcludedPage onGoToVocabulary={() => setTab('vocabulary')} onGoToDrafts={() => setTab('drafts')} />
-            )}
+            </div>
             {tab === 'stats' && (
               <Suspense fallback={<Spinner label="Loading statistics…" />}>
                 <StatsPage />
